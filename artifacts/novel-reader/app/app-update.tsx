@@ -91,7 +91,7 @@ export default function AppUpdateScreen() {
 
   const busy = installPhase === 'preparing' || installPhase === 'downloading' || installPhase === 'installing';
   const installCopy = installPhase === 'idle' && state === 'available'
-    ? `Download Prime Novel ${release?.version ?? ''} and install it on this device.`
+    ? `Download TipNovel ${release?.version ?? ''} and install it on this device.`
     : message ?? updateInstallPhaseCopy(installPhase);
 
   const badge = statusBadge(state, result);
@@ -99,7 +99,7 @@ export default function AppUpdateScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <SubscreenHeader eyebrow="PRIME NOVEL" title="App updates" />
+      <SubscreenHeader eyebrow="TIPNOVEL" title="App updates" />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 48 }]} showsVerticalScrollIndicator={false}>
         <View style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.versionIcon, { backgroundColor: colors.secondary }]}>
@@ -107,7 +107,7 @@ export default function AppUpdateScreen() {
           </View>
           <View style={styles.versionCopy}>
             <Text style={[styles.cardLabel, { color: colors.mutedForeground }]}>CURRENT VERSION</Text>
-            <Text style={[styles.version, { color: colors.foreground }]}>Prime Novel {version}</Text>
+            <Text style={[styles.version, { color: colors.foreground }]}>TipNovel {version}</Text>
             <View style={[styles.badge, { backgroundColor: badge.tone === 'positive' ? colors.secondary : badge.tone === 'danger' ? colors.destructive : colors.secondary }]}>
               <Text style={[styles.badgeText, { color: badge.tone === 'danger' ? colors.destructiveForeground : colors.secondaryForeground }]}>{badge.label}</Text>
             </View>
