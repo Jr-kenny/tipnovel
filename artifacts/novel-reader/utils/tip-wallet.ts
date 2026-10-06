@@ -127,6 +127,14 @@ async function nativeProvider(): Promise<UniversalProvider> {
           const keys = await AsyncStorage.getAllKeys();
           return keys.filter((key) => key.startsWith('tipnovel.wc:')).map((key) => key.slice('tipnovel.wc:'.length));
         },
+        getEntries: async <T,>(): Promise<[string, T][]> => {
+          const keys = await AsyncStorage.getAllKeys();
+          const names = keys.filter((key) => key.startsWith('tipnovel.wc:')).map((key) => key.slice('tipnovel.wc:'.length));
+          return Promise.all(names.map(async (name) => [
+            name,
+            (((await AsyncStorage.getItem(`tipnovel.wc:${name}`)) ?? undefined) as T | undefined),
+          ] as [string, T]));
+        },
       },
     });
     wcProvider.on('display_uri', (uri: string) => setPairingUri(uri));
