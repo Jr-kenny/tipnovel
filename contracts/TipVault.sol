@@ -14,6 +14,10 @@ contract TipNovelVault is Ownable {
 
     // authorId => total tipped (in USDC 6-decimals)
     mapping(bytes32 => uint256) public authorBalances;
+    // authorId => unique tipper count
+    mapping(bytes32 => uint256) public authorTipperCount;
+    // authorId => tipper => seen
+    mapping(bytes32 => mapping(address => bool)) public hasTipped;
     // authorId => whitelisted payout wallet (set after manual verification)
     mapping(bytes32 => address) public authorWallets;
     // authorId => verified flag
@@ -31,6 +35,10 @@ contract TipNovelVault is Ownable {
     function tip(bytes32 authorId, uint256 amount, string calldata memo) external {
         require(amount > 0, "amount=0");
         require(usdc.transferFrom(msg.sender, address(this), amount), "transfer failed");
+        if (!hasTipped[authorId][msg.sender]) {
+            hasTipped[authorId][msg.sender] = true;
+            authorTipperCount[authorId] += 1;
+        }
         authorBalances[authorId] += amount;
         emit Tipped(authorId, msg.sender, amount, memo);
     }
