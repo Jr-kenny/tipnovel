@@ -65,4 +65,13 @@ contract TipNovelVault is Ownable {
     function unclaimed(bytes32 authorId) external view returns (uint256) {
         return authorBalances[authorId];
     }
+
+    /// @notice Balance, unique tipper count, verification, and payout wallet.
+    function stats(bytes32 authorId)
+        external
+        view
+        returns (uint256 balance, uint256 tippers, bool isVerified, address wallet)
+    {
+        return (authorBalances[authorId], authorTipperCount[authorId], verified[authorId], authorWallets[authorId]);
+    }
 }
