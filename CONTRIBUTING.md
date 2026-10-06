@@ -1,6 +1,6 @@
 # Contributing
 
-Contributions are welcome. Prime Novel is a reading product, so changes should keep the experience calm, reliable, and easy to understand.
+Contributions are welcome. TipNovel is a reading product, so changes should keep the experience calm, reliable, and easy to understand.
 
 ## The bar
 
@@ -18,9 +18,9 @@ Contributions are welcome. Prime Novel is a reading product, so changes should k
 
 ## Product boundaries
 
-- Prime Novel owns and maintains its catalogue and source connections. Do not add user-facing source toggles, repository controls, or source package installation flows without a product decision.
+- TipNovel owns and maintains its catalogue and source connections. Do not add user-facing source toggles, repository controls, or source package installation flows without a product decision.
 - Source adapters and the internal source registry stay behind the app's existing data and utility boundaries.
-- Shosetsu is an architectural reference for reader behavior, progress restoration, downloads, and update flows. Prime Novel keeps its own product language and visual design.
+- Shosetsu is an architectural reference for reader behavior, progress restoration, downloads, and update flows. TipNovel keeps its own product language and visual design.
 - Reading progress must restore the reader to the same place after leaving and reopening a chapter.
 - Mobile remains the primary product. The web build uses the same screens and shared state, with web-specific behavior kept inside platform boundaries.
 
