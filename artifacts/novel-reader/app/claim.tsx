@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatUnits, isAddress, type Address } from 'viem';
 import { SubscreenHeader } from '@/components/SubscreenHeader';
 import { useColors } from '@/hooks/useColors';
-import { PRIME_SOURCE_REGISTRY } from '@/data/prime-sources';
 import {
   OWNER_ADDRESS,
   USDC_DECIMALS,
@@ -37,7 +36,6 @@ export default function ClaimScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [authorName, setAuthorName] = useState('');
-  const [sourceId, setSourceId] = useState(PRIME_SOURCE_REGISTRY[0]?.id ?? '');
   const [stats, setStats] = useState<AuthorStats | null>(null);
   const [lookupBusy, setLookupBusy] = useState(false);
   const [lookupFailed, setLookupFailed] = useState(false);
@@ -65,7 +63,7 @@ export default function ClaimScreen() {
   }, [refreshClaims]);
 
   const checkedName = usableAuthorName(authorName);
-  const checkedAuthorId = checkedName ? authorIdFor(checkedName, sourceId) : null;
+  const checkedAuthorId = checkedName ? authorIdFor(checkedName) : null;
 
   const handleLookup = async () => {
     if (!checkedAuthorId) return;
@@ -97,7 +95,6 @@ export default function ClaimScreen() {
     try {
       await saveClaim({
         authorName: checkedName,
-        sourceId,
         authorId: checkedAuthorId,
         code: proofCode.trim(),
         payoutWallet: payoutWallet.trim(),
@@ -176,27 +173,6 @@ export default function ClaimScreen() {
               style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
               value={authorName}
             />
-            <Text style={[styles.section, { color: colors.mutedForeground }]}>ORIGINAL SOURCE</Text>
-            <View style={styles.chips}>
-              {PRIME_SOURCE_REGISTRY.map((source) => {
-                const selected = source.id === sourceId;
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    key={source.id}
-                    onPress={() => {
-                      setSourceId(source.id);
-                      setStats(null);
-                      setSubmitted(false);
-                    }}
-                    style={[styles.chip, { backgroundColor: selected ? colors.primary : colors.background, borderColor: selected ? colors.primary : colors.border }]}
-                  >
-                    <Text style={[styles.chipText, { color: selected ? colors.primaryForeground : colors.foreground }]}>{source.name}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
             <Pressable
               accessibilityRole="button"
               disabled={!checkedAuthorId || lookupBusy}
@@ -350,11 +326,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 22, gap: 14 },
   card: { borderWidth: 1, borderRadius: 18, padding: 18 },
   cardTitle: { fontFamily: 'Georgia', fontSize: 20, lineHeight: 25 },
-  section: { fontFamily: 'Inter_600SemiBold', fontSize: 9, letterSpacing: 1.2, marginTop: 14, marginBottom: 8 },
   input: { minHeight: 44, borderWidth: 1, borderRadius: 12, paddingHorizontal: 13, marginTop: 12, fontFamily: 'Inter_500Medium', fontSize: 13 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { minHeight: 32, borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
-  chipText: { fontFamily: 'Inter_500Medium', fontSize: 11 },
   action: { minHeight: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', marginTop: 14 },
   actionText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   note: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, marginTop: 8 },
