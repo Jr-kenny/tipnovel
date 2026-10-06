@@ -16,7 +16,7 @@ export default function DataRecoveryScreen() {
   useEffect(() => {
     void inspectRecoverableData()
       .then(setPreview)
-      .catch(() => setMessage('Prime Novel could not inspect the saved records safely.'))
+      .catch(() => setMessage('TipNovel could not inspect the saved records safely.'))
       .finally(() => setBusy(false));
   }, []);
 
@@ -28,7 +28,7 @@ export default function DataRecoveryScreen() {
     setMessage(undefined);
     try {
       await recoverSavedData();
-      setMessage('Saved records were restored. Close Prime Novel completely and open it again to reload them.');
+      setMessage('Saved records were restored. Close TipNovel completely and open it again to reload them.');
       setPreview(await inspectRecoverableData());
     } catch {
       setMessage('Recovery stopped without deleting anything. Your existing records were left untouched.');
@@ -41,12 +41,12 @@ export default function DataRecoveryScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background, paddingBottom: insets.bottom + 24 }]}>
-      <SubscreenHeader eyebrow="PRIME NOVEL" title="Recover saved data" />
+      <SubscreenHeader eyebrow="TIPNOVEL" title="Recover saved data" />
       <View style={styles.content}>
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Feather name="archive" size={22} color={colors.primary} />
           <Text style={[styles.title, { color: colors.foreground }]}>Your existing data comes first</Text>
-          <Text style={[styles.copy, { color: colors.mutedForeground }]}>Prime Novel checks its protected backups, earlier download records, and reading history. Recovery only fills empty areas and won’t replace records that are already visible.</Text>
+          <Text style={[styles.copy, { color: colors.mutedForeground }]}>TipNovel checks its protected backups, earlier download records, and reading history. Recovery only fills empty areas and won’t replace records that are already visible.</Text>
         </View>
 
         {busy && !preview ? <ActivityIndicator color={colors.primary} /> : null}
@@ -68,7 +68,7 @@ export default function DataRecoveryScreen() {
         >
           {busy ? <ActivityIndicator color={colors.primaryForeground} /> : <Text style={[styles.actionText, { color: colors.primaryForeground }]}>{recoverable > 0 ? 'Recover saved data' : 'No hidden records found'}</Text>}
         </Pressable>
-        <Text style={[styles.helper, { color: colors.mutedForeground }]}>Don’t clear app storage or uninstall Prime Novel before running recovery.</Text>
+        <Text style={[styles.helper, { color: colors.mutedForeground }]}>Don’t clear app storage or uninstall TipNovel before running recovery.</Text>
       </View>
     </View>
   );
