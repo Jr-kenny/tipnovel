@@ -62,7 +62,7 @@ function withAndroidManifestAliases(config) {
     );
 
     if (!mainActivity) {
-      throw new Error('Prime Novel MainActivity was not found in AndroidManifest.xml');
+      throw new Error('TipNovel MainActivity was not found in AndroidManifest.xml');
     }
 
     const mainName = mainActivity.$['android:name'];
@@ -87,7 +87,7 @@ function withAndroidManifestAliases(config) {
           'android:exported': 'true',
           'android:icon': `@mipmap/ic_launcher_${icon.id}`,
           'android:targetActivity': targetActivity,
-          'android:label': 'Prime Novel',
+          'android:label': 'TipNovel',
         },
         'intent-filter': [
           {
