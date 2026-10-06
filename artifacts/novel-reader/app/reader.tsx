@@ -40,7 +40,7 @@ import { getReaderFont, getReaderPalette, ReaderPalette } from '@/utils/reader-s
 import { tokenizeParagraph, formatChapterForCopy, formatHighlightsForCopy, highlightsForChapter } from '@/utils/word-highlights';
 import { WebLandingButton } from '@/components/WebLandingButton';
 
-const KEEP_AWAKE_TAG = 'prime-novel-reader';
+const KEEP_AWAKE_TAG = 'tipnovel-reader';
 const emptyBook: Book = {
   id: '',
   title: '',
