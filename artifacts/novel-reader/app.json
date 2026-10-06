@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Prime Novel",
-    "slug": "novel-reader",
-    "description": "Prime Novel is a calm, native reading app for discovering, organizing, and reading novels. Customize themes, fonts, text size, spacing, and reading modes, save progress offline, manage downloads, and return to the exact place you stopped.",
+    "name": "TipNovel",
+    "slug": "tipnovel",
+    "description": "TipNovel is a calm reading app where every book carries a direct line to its writer. Discover, organize, and read novels, and tip authors in USDC when a story earns it.",
     "version": "1.0.3",
     "orientation": "default",
     "icon": "./assets/images/icon-launcher.png",
-    "scheme": "novel-reader",
+    "scheme": "tipnovel",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,11 +15,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "bundleIdentifier": "com.primehouse.primenovel",
+      "bundleIdentifier": "com.tipnovel.app",
       "supportsTablet": false
     },
     "android": {
-      "package": "com.primehouse.primenovel"
+      "package": "com.tipnovel.app"
     },
     "web": {
       "output": "single",
