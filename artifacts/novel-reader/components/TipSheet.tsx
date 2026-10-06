@@ -257,7 +257,7 @@ export function TipSheet({
             </View>
             <TextInput
               accessibilityLabel="Custom tip amount in USDC"
-              keyboardType={Platform.OS === 'web' ? 'decimal' : 'decimal-pad'}
+              keyboardType="decimal-pad"
               onChangeText={(value) => {
                 setCustomAmount(value);
                 setPreset(null);
