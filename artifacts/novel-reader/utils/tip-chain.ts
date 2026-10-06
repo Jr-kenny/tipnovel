@@ -1,21 +1,21 @@
 import { keccak256, stringToHex } from 'viem';
-import { arc } from 'viem/chains';
+import { arcTestnet } from 'viem/chains';
 
-export const ARC = arc;
-export const ARC_RPC_URL = 'https://rpc.mainnet.arc.io';
-export const ARC_EXPLORER_URL = 'https://explorer.arc.io';
+export const ARC = arcTestnet;
+export const ARC_RPC_URL = 'https://rpc.testnet.arc.io';
+export const ARC_EXPLORER_URL = 'https://testnet.arcscan.app';
 
 export const USDC_ADDRESS = '0x3600000000000000000000000000000000000000' as const;
 export const USDC_DECIMALS = 6;
 
-export const TIP_VAULT_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+export const TIP_VAULT_ADDRESS = '0x88c1726b506ac43cdc14d9b8aa229c7d342c5a15' as const;
 export const VAULT_DEPLOYED = TIP_VAULT_ADDRESS !== '0x0000000000000000000000000000000000000000';
 
 export const TIP_PRESETS = [0.1, 2, 5] as const;
 
 export const WALLET_CONNECT_PROJECT_ID = '';
 
-export const OWNER_ADDRESS: string = '';
+export const OWNER_ADDRESS: string = '0x23f060eBE21CB48d7bd0F2b63fd814fe65514AaE';
 
 export const VAULT_ABI = [
   {
