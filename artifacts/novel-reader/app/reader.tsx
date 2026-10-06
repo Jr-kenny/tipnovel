@@ -487,7 +487,7 @@ export default function ReaderScreen() {
   const hasNextChapter = activeBook.chapter < activeBook.totalChapters;
   const isCurrentChapterRead = isChapterRead(activeBook.chapter);
   const tippableAuthor = usableAuthorName(activeBook.author);
-  const tippableAuthorId = tippableAuthor ? authorIdFor(tippableAuthor, activeBook.sourceId) : null;
+  const tippableAuthorId = tippableAuthor ? authorIdFor(tippableAuthor) : null;
 
   const maybeShowTipPrompt = (chapter: number) => {
     if (!tippableAuthorId) return;

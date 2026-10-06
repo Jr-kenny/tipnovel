@@ -96,8 +96,8 @@ export function usableAuthorName(author: string | undefined | null): string | nu
   return name.length > 0 ? name : null;
 }
 
-export function authorIdFor(authorName: string, sourceId: string): `0x${string}` {
-  const key = `${authorName.trim().replace(/\s+/g, ' ').toLowerCase()}\n${(sourceId ?? '').trim().toLowerCase()}`;
+export function authorIdFor(authorName: string): `0x${string}` {
+  const key = authorName.trim().replace(/\s+/g, ' ').toLowerCase();
   return keccak256(stringToHex(key));
 }
 
