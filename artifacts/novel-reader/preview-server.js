@@ -42,9 +42,28 @@ function send(res, file) {
   fs.createReadStream(file).pipe(res);
 }
 
+function proxyApi(req, res) {
+  const upstream = http.request(
+    { host: "127.0.0.1", port: 3101, path: req.url, method: req.method, headers: req.headers },
+    (reply) => {
+      res.writeHead(reply.statusCode || 502, reply.headers);
+      reply.pipe(res);
+    },
+  );
+  upstream.on("error", () => {
+    res.writeHead(502, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "The catalogue service could not be reached." }));
+  });
+  req.pipe(upstream);
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
   let p = url.pathname;
+
+  if (p.startsWith("/api/")) {
+    return proxyApi(req, res);
+  }
 
   if (p === "/") {
     return send(res, path.join(DIST, "index.html"));
