@@ -81,7 +81,7 @@ function webProvider(): EIP1193Provider | null {
   return provider ?? null;
 }
 
-type UniversalProvider = import('@walletconnect/universal-provider').UniversalProvider;
+type UniversalProvider = import('@walletconnect/universal-provider').default;
 
 let wcProvider: UniversalProvider | null = null;
 let pairingUri: string | null = null;
@@ -118,10 +118,12 @@ async function nativeProvider(): Promise<UniversalProvider> {
         icons: [],
       },
       storage: {
-        getItem: async (key: string) => (await AsyncStorage.getItem(`tipnovel.wc:${key}`)) ?? undefined,
-        setItem: (key: string, value: string) => AsyncStorage.setItem(`tipnovel.wc:${key}`, value),
-        removeItem: (key: string) => AsyncStorage.removeItem(`tipnovel.wc:${key}`),
-        getKeys: async () => {
+        getItem: async <T,>(key: string): Promise<T | undefined> =>
+          ((await AsyncStorage.getItem(`tipnovel.wc:${key}`)) ?? undefined) as T | undefined,
+        setItem: <T,>(key: string, value: T): Promise<void> =>
+          AsyncStorage.setItem(`tipnovel.wc:${key}`, typeof value === 'string' ? value : JSON.stringify(value)),
+        removeItem: (key: string): Promise<void> => AsyncStorage.removeItem(`tipnovel.wc:${key}`),
+        getKeys: async (): Promise<string[]> => {
           const keys = await AsyncStorage.getAllKeys();
           return keys.filter((key) => key.startsWith('tipnovel.wc:')).map((key) => key.slice('tipnovel.wc:'.length));
         },
