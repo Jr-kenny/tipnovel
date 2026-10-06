@@ -901,7 +901,10 @@ export default function ReaderScreen() {
     const chapterOffset = Math.max(0, contentOffset.y);
     savePosition(chapter, { verticalOffset: chapterOffset, chapterProgress: scrollProgress(chapterOffset, contentSize.height - layoutMeasurement.height) });
     const reachedEnd = contentSize.height > layoutMeasurement.height + 40 && contentOffset.y + layoutMeasurement.height >= contentSize.height - 80;
-    if (reachedEnd) horizontalChapterReachedEndRef.current.add(chapter);
+    if (reachedEnd) {
+      horizontalChapterReachedEndRef.current.add(chapter);
+      maybeShowTipPrompt(chapter);
+    }
     if (chapter === activeBook.totalChapters && reachedEnd && finalChapterMarkedRef.current !== chapter) {
       finalChapterMarkedRef.current = chapter;
       markChapterRead(chapter);
