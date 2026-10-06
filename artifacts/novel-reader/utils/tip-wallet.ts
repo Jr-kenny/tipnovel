@@ -321,6 +321,34 @@ export async function verifyAuthor(authorId: `0x${string}`, wallet: Address): Pr
   }
 }
 
+export async function withdrawTips(authorId: `0x${string}`): Promise<Hash> {
+  if (!VAULT_DEPLOYED) throw new TipError('failed', 'Tipping is not live yet. Check back soon.');
+  const active = session;
+  if (!active) throw new TipError('no-wallet', 'Connect the payout wallet to withdraw.');
+  const provider = Platform.OS === 'web' ? webProvider() : wcProvider;
+  if (!provider) throw new TipError('no-wallet', 'Connect the payout wallet to withdraw.');
+  const walletClient = createWalletClient({
+    chain: ARC,
+    transport: custom(provider as unknown as EIP1193Provider),
+    account: active.address,
+  });
+  try {
+    const hash = await walletClient.writeContract({
+      address: TIP_VAULT_ADDRESS,
+      abi: VAULT_ABI,
+      functionName: 'withdraw',
+      args: [authorId],
+      chain: ARC,
+    });
+    await publicClient.waitForTransactionReceipt({ hash });
+    return hash;
+  } catch (error) {
+    if (error instanceof TipError) throw error;
+    if (isRejection(error)) throw new TipError('rejected', 'Signature request was dismissed. Nothing was sent.');
+    throw new TipError('failed', 'Withdrawal failed. Nothing was sent.');
+  }
+}
+
 export async function readAuthorStats(authorId: `0x${string}`): Promise<AuthorStats> {
   if (!VAULT_DEPLOYED) {
     return { deployed: false, balance: 0n, tippers: 0n, verified: false, wallet: null };
