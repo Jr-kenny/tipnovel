@@ -2070,7 +2070,7 @@
           body.classList.add("modal-open");
           document.querySelectorAll("[data-download-link]").forEach(function (link) {
             link.setAttribute("aria-disabled", "false");
-            link.download = "Prime-Novel.apk";
+            link.download = "TipNovel.apk";
           });
           const note = document.querySelector("[data-download-note]");
           note.textContent = "Android preview ready for direct install.";
@@ -2115,7 +2115,7 @@
         }
 
         function renderSearch() {
-          searchResults.innerHTML = '<div class="empty-search">Search all Prime sources by title, author, or genre.</div>';
+           searchResults.innerHTML = '<div class="empty-search">Search all sources by title, author, or genre.</div>';
         }
 
         function renderCatalogSearchResults(sourceResults) {
@@ -2140,7 +2140,7 @@
             });
             const title = escapeHtml(novel.title || "Untitled novel");
             const author = escapeHtml(novel.author || "Author unavailable");
-            const source = escapeHtml(entry.source?.name || "Prime source");
+            const source = escapeHtml(entry.source?.name || "TipNovel source");
             const cover = escapeHtml(novel.coverUrl || "/landing-assets/cover-lighthouse.jpg");
             return '<a class="search-result" href="/app/novel?' + params.toString() + '"><img src="' + cover + '" alt="" /><span class="search-result-copy"><strong>' + title + '</strong><span>' + author + ' · ' + source + '</span></span><span class="search-result-arrow" aria-hidden="true">↗</span></a>';
           }).join("");
@@ -2182,7 +2182,7 @@
             renderSearch();
             return;
           }
-          searchResults.innerHTML = '<div class="search-loading" aria-live="polite"><span class="search-loading-dot"></span><span>Searching Prime sources…</span></div>';
+           searchResults.innerHTML = '<div class="search-loading" aria-live="polite"><span class="search-loading-dot"></span><span>Searching sources…</span></div>';
           searchTimer = window.setTimeout(function () {
             fetch("/api/catalog?op=search&q=" + encodeURIComponent(query), { headers: { Accept: "application/json" } })
               .then(function (response) {
