@@ -38,4 +38,4 @@ for (const asset of assets) {
 
 fs.copyFileSync(landingTemplate, path.join(distRoot, 'index.html'));
 fs.copyFileSync(releaseManifest, path.join(distRoot, 'app-release.json'));
-console.log(`Prepared Prime Novel landing page and ${assets.length} landing assets.`);
+console.log(`Prepared TipNovel landing page and ${assets.length} landing assets.`);
