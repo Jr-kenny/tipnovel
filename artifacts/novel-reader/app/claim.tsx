@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatUnits, isAddress, type Address } from 'viem';
 import { SubscreenHeader } from '@/components/SubscreenHeader';
@@ -10,6 +10,7 @@ import {
   OWNER_ADDRESS,
   USDC_DECIMALS,
   authorIdFor,
+  explorerTxUrl,
   usableAuthorName,
 } from '@/utils/tip-chain';
 import {
@@ -21,7 +22,9 @@ import {
   restoreWalletSession,
   subscribeWalletSession,
   verifyAuthor,
+  withdrawTips,
   type AuthorStats,
+  type WalletSession,
 } from '@/utils/tip-wallet';
 import { loadClaims, markClaimApproved, saveClaim, type ClaimRequest } from '@/utils/tip-claims';
 
@@ -46,6 +49,10 @@ export default function ClaimScreen() {
   const [claims, setClaims] = useState<ClaimRequest[]>([]);
   const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [connected, setConnected] = useState<WalletSession | null>(() => getWalletSession());
+  const [withdrawBusy, setWithdrawBusy] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [withdrawTx, setWithdrawTx] = useState<string | null>(null);
 
   const refreshClaims = useCallback(async () => {
     setClaims(await loadClaims());
@@ -54,7 +61,7 @@ export default function ClaimScreen() {
   useEffect(() => {
     void refreshClaims();
     void restoreWalletSession().catch(() => {});
-    return subscribeWalletSession(() => {});
+    return subscribeWalletSession(() => setConnected(getWalletSession()));
   }, [refreshClaims]);
 
   const checkedName = usableAuthorName(authorName);
@@ -128,6 +135,24 @@ export default function ClaimScreen() {
       setReviewError(plainError(error));
     } finally {
       setReviewBusyId(null);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!checkedAuthorId) return;
+    setWithdrawBusy(true);
+    setWithdrawError(null);
+    setWithdrawTx(null);
+    try {
+      if (!connected) await connectWallet();
+      await ensureArcNetwork();
+      const hash = await withdrawTips(checkedAuthorId);
+      setWithdrawTx(hash);
+      setStats(await readAuthorStats(checkedAuthorId));
+    } catch (error) {
+      setWithdrawError(plainError(error));
+    } finally {
+      setWithdrawBusy(false);
     }
   };
 
@@ -247,6 +272,38 @@ export default function ClaimScreen() {
               </Pressable>
               {submitError ? <Text style={[styles.error, { color: colors.destructive }]}>{submitError}</Text> : null}
               {submitted ? <Text style={[styles.note, { color: colors.mutedForeground }]}>Under review. Nothing moves until the proof is approved.</Text> : null}
+            </View>
+          ) : null}
+
+          {stats && stats.verified && stats.wallet && connected?.address.toLowerCase() === stats.wallet.toLowerCase() ? (
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>Withdraw</Text>
+              <Text style={[styles.note, { color: colors.mutedForeground }]}>
+                {formatUnits(stats.balance, USDC_DECIMALS)} USDC waiting for this wallet.
+              </Text>
+              {withdrawTx ? (
+                <Pressable
+                  accessibilityRole="link"
+                  onPress={() => void Linking.openURL(explorerTxUrl(withdrawTx))}
+                  style={[styles.action, { backgroundColor: colors.secondary }]}
+                >
+                  <Text style={[styles.actionText, { color: colors.secondaryForeground }]}>View withdrawal</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={withdrawBusy || stats.balance <= 0n}
+                  onPress={() => void handleWithdraw()}
+                  style={[styles.action, { backgroundColor: colors.primary, opacity: withdrawBusy || stats.balance <= 0n ? 0.5 : 1 }]}
+                >
+                  {withdrawBusy ? (
+                    <ActivityIndicator color={colors.primaryForeground} />
+                  ) : (
+                    <Text style={[styles.actionText, { color: colors.primaryForeground }]}>Withdraw tips</Text>
+                  )}
+                </Pressable>
+              )}
+              {withdrawError ? <Text style={[styles.error, { color: colors.destructive }]}>{withdrawError}</Text> : null}
             </View>
           ) : null}
 
