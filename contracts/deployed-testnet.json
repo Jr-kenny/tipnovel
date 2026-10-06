@@ -1,0 +1,11 @@
+{
+  "network": "Arc Testnet",
+  "chainId": 5042002,
+  "contract": "TipNovelVault",
+  "address": "0x88c1726b506ac43cdc14d9b8aa229c7d342c5a15",
+  "deployTx": "0x3718e9401e79cf1c028058cf13768af58515445e045bb388edce842bba5e0422",
+  "owner": "0x23f060eBE21CB48d7bd0F2b63fd814fe65514AaE",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "explorer": "https://testnet.arcscan.app/address/0x88c1726b506ac43cdc14d9b8aa229c7d342c5a15",
+  "deployedAt": "2026-10-06"
+}
