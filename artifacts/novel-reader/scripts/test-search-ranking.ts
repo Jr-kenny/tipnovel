@@ -14,4 +14,4 @@ assert.ok(titleSearchScore('From Bullets to Billion', 'Bullet to Billion') < tit
 assert.ok(titleSearchScore('Bullets to Billion', 'Bullets to Billion') < titleSearchScore('From Bullets to Billion', 'Bullets to Billion'));
 assert.ok(titleSearchScore('From Bullets Straight to a Billion', 'Bullets to Billion') < titleSearchScore('The Billionaire With Bullets', 'Bullets to Billion'));
 
-console.log('Prime Novel smart title ranking checks passed.');
+console.log('TipNovel smart title ranking checks passed.');
