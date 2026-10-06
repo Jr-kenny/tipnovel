@@ -41,7 +41,7 @@ export default function ViewSettingsScreen() {
           <Choice label="White" selected={settings.appTheme === 'white'} onPress={() => setSetting('appTheme', 'white')} dot="#ffffff" />
           <Choice label="Dark" selected={settings.appTheme === 'dark'} onPress={() => setSetting('appTheme', 'dark')} dot="#171614" />
         </View>
-        <Text style={[styles.hint, { color: colors.mutedForeground }]}>Choose the appearance used throughout Prime Novel.</Text>
+        <Text style={[styles.hint, { color: colors.mutedForeground }]}>Choose the appearance used throughout TipNovel.</Text>
 
         <Text style={[styles.section, styles.iconSection, { color: colors.mutedForeground }]}>APP ICON</Text>
         <Text style={[styles.label, { color: colors.foreground }]}>Home screen icon</Text>
