@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type ClaimRequest = {
   id: string;
   authorName: string;
-  sourceId: string;
   authorId: `0x${string}`;
   code: string;
   payoutWallet: string;
