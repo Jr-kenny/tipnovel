@@ -310,8 +310,6 @@ export async function verifyAuthor(authorId: `0x${string}`, wallet: Address): Pr
     throw new TipError('failed', 'Verification failed. Nothing was sent.');
   }
 }
-  return publicClient.readContract({ address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: [address] });
-}
 
 export async function readAuthorStats(authorId: `0x${string}`): Promise<AuthorStats> {
   if (!VAULT_DEPLOYED) {
