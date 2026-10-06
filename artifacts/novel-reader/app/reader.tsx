@@ -39,6 +39,9 @@ import { Book, ReaderFont, ReaderMode, ReaderPreferences, ReaderTheme, useReader
 import { getReaderFont, getReaderPalette, ReaderPalette } from '@/utils/reader-style';
 import { tokenizeParagraph, formatChapterForCopy, formatHighlightsForCopy, highlightsForChapter } from '@/utils/word-highlights';
 import { WebLandingButton } from '@/components/WebLandingButton';
+import { TipSheet } from '@/components/TipSheet';
+import { ChapterTipPrompt } from '@/components/ChapterTipPrompt';
+import { authorIdFor, usableAuthorName } from '@/utils/tip-chain';
 
 const KEEP_AWAKE_TAG = 'tipnovel-reader';
 const emptyBook: Book = {
@@ -444,6 +447,9 @@ export default function ReaderScreen() {
   const hasActiveBook = Boolean(selectedBook);
   const palette = getReaderPalette(readerPreferences.theme, colors);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tipSheetOpen, setTipSheetOpen] = useState(false);
+  const [tipPromptChapter, setTipPromptChapter] = useState<number | null>(null);
+  const dismissedTipPromptsRef = useRef<Set<string>>(new Set());
   const [controlsVisible, setControlsVisible] = useState(true);
   const [loadedChapters, setLoadedChapters] = useState<number[]>([activeBook.chapter]);
   const [horizontalChapters, setHorizontalChapters] = useState<number[]>(() => initialHorizontalChapters(activeBook.chapter, activeBook.totalChapters));
@@ -480,6 +486,20 @@ export default function ReaderScreen() {
   const horizontalItems = useMemo(() => horizontalChapters, [horizontalChapters]);
   const hasNextChapter = activeBook.chapter < activeBook.totalChapters;
   const isCurrentChapterRead = isChapterRead(activeBook.chapter);
+  const tippableAuthor = usableAuthorName(activeBook.author);
+  const tippableAuthorId = tippableAuthor ? authorIdFor(tippableAuthor, activeBook.sourceId) : null;
+
+  const maybeShowTipPrompt = (chapter: number) => {
+    if (!tippableAuthorId) return;
+    const key = `${activeBook.id}:${chapter}`;
+    if (dismissedTipPromptsRef.current.has(key)) return;
+    setTipPromptChapter((current) => (current === chapter ? current : chapter));
+  };
+
+  const dismissTipPrompt = (chapter: number) => {
+    dismissedTipPromptsRef.current.add(`${activeBook.id}:${chapter}`);
+    setTipPromptChapter((current) => (current === chapter ? null : current));
+  };
   const chromeVisible = controlsVisible || settingsOpen;
   const immersiveMode = !chromeVisible;
   const chromeTopHeight = insets.top + (Platform.OS === 'web' ? 40 : 10) + 23 + 12;
@@ -494,6 +514,8 @@ export default function ReaderScreen() {
     setChapterContent({});
     setChapterErrors({});
     setLoadingChapters(new Set());
+    setTipPromptChapter(null);
+    setTipSheetOpen(false);
   }, [activeBook.id]);
 
   useEffect(() => {
