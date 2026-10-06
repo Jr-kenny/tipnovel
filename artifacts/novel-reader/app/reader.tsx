@@ -1120,14 +1120,25 @@ export default function ReaderScreen() {
               <Text style={[styles.chapterTitle, { color: palette.text, fontFamily: getReaderFont(readerPreferences.font).heading, fontSize: readerPreferences.textSize + 14, lineHeight: readerPreferences.textSize + 20 }]}>{titleFor(chapter)}</Text>
               <Text style={[styles.byline, { color: palette.muted }]}>{activeBook.author} · 8 min read</Text>
               {chapterStatus(chapter) ? <Text style={[styles.chapterLoading, { color: palette.muted }]}>{chapterStatus(chapter)}</Text> : (
-                <Paragraphs
-                  paragraphs={paragraphsFor(chapter)}
-                  preferences={readerPreferences}
-                  palette={palette}
-                  keyPrefix={`${activeBook.id}-${chapter}`}
-                  onToggleWord={onToggleWord}
-                  isWordHighlighted={isChapterWordHighlighted}
-                />
+                <>
+                  <Paragraphs
+                    paragraphs={paragraphsFor(chapter)}
+                    preferences={readerPreferences}
+                    palette={palette}
+                    keyPrefix={`${activeBook.id}-${chapter}`}
+                    onToggleWord={onToggleWord}
+                    isWordHighlighted={isChapterWordHighlighted}
+                  />
+                  {tipPromptChapter === chapter ? (
+                    <ChapterTipPrompt
+                      onTip={() => {
+                        dismissTipPrompt(chapter);
+                        setTipSheetOpen(true);
+                      }}
+                      palette={palette}
+                    />
+                  ) : null}
+                </>
               )}
             </View>
           ))}
@@ -1179,14 +1190,25 @@ export default function ReaderScreen() {
                   <Text style={[styles.chapterTitle, { color: palette.text, fontFamily: getReaderFont(readerPreferences.font).heading, fontSize: readerPreferences.textSize + 14, lineHeight: readerPreferences.textSize + 20 }]}>{titleFor(chapter)}</Text>
                   <Text style={[styles.byline, { color: palette.muted }]}>{activeBook.author} · 8 min read</Text>
                   {chapterStatus(chapter) ? <Text style={[styles.chapterLoading, { color: palette.muted }]}>{chapterStatus(chapter)}</Text> : (
-                    <Paragraphs
-                      paragraphs={paragraphsFor(chapter)}
-                      preferences={readerPreferences}
-                      palette={palette}
-                      keyPrefix={`${activeBook.id}-horizontal-${chapter}`}
-                      onToggleWord={onToggleWord}
-                      isWordHighlighted={isChapterWordHighlighted}
-                    />
+                    <>
+                      <Paragraphs
+                        paragraphs={paragraphsFor(chapter)}
+                        preferences={readerPreferences}
+                        palette={palette}
+                        keyPrefix={`${activeBook.id}-horizontal-${chapter}`}
+                        onToggleWord={onToggleWord}
+                        isWordHighlighted={isChapterWordHighlighted}
+                      />
+                      {tipPromptChapter === chapter ? (
+                        <ChapterTipPrompt
+                          onTip={() => {
+                            dismissTipPrompt(chapter);
+                            setTipSheetOpen(true);
+                          }}
+                          palette={palette}
+                        />
+                      ) : null}
+                    </>
                   )}
                   {chapter === activeBook.totalChapters ? (
                     <View style={[styles.endNote, { borderTopColor: palette.border }]}>
@@ -1275,6 +1297,16 @@ export default function ReaderScreen() {
           onMarkUnread={() => markChapterUnread(activeBook.chapter)}
           palette={palette}
           preferences={readerPreferences}
+        />
+      ) : null}
+
+      {tipSheetOpen && tippableAuthor && tippableAuthorId ? (
+        <TipSheet
+          authorId={tippableAuthorId}
+          authorName={tippableAuthor}
+          bookTitle={activeBook.title}
+          onClose={() => setTipSheetOpen(false)}
+          palette={palette}
         />
       ) : null}
     </View>
