@@ -16,7 +16,7 @@ async function main() {
   }, 2));
   assert.equal(permanentAttempts, 2, 'permanent failures should stop after the configured attempts');
 
-  console.log('Prime Novel durable storage retry checks passed.');
+  console.log('TipNovel durable storage retry checks passed.');
 }
 
 void main().catch((error) => {
