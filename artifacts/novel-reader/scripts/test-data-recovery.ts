@@ -83,7 +83,7 @@ async function main() {
   assert.equal(recoveredBooks[0].chapter, 8);
   assert.equal(JSON.parse(values.get('prime-history') ?? '[]').length, 1);
 
-  console.log('Prime Novel storage recovery regression checks passed.');
+  console.log('TipNovel storage recovery regression checks passed.');
 }
 
 void main().catch((error) => {
