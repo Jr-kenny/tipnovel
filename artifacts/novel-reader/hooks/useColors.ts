@@ -7,7 +7,7 @@ import { useApp } from '@/context/AppContext';
  * The returned object contains all color tokens for the active palette
  * plus scheme-independent values like `radius`.
  *
- * The default cream palette preserves the original Prime Novel appearance.
+ * The default cream palette preserves the original TipNovel appearance.
  */
 export function useColors() {
   const { settings } = useApp();
