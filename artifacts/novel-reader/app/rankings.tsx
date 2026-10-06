@@ -40,7 +40,7 @@ export default function RankingsScreen() {
         <View style={styles.intro}>
           <Text style={[styles.eyebrow, { color: colors.primary }]}>Your reading activity</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>Most opened on this device.</Text>
-          <Text style={[styles.copy, { color: colors.mutedForeground }]}>Prime Novel keeps this list local until a shared reader analytics service is connected. Nothing here is presented as a global popularity claim.</Text>
+          <Text style={[styles.copy, { color: colors.mutedForeground }]}>TipNovel keeps this list local until a shared reader analytics service is connected. Nothing here is presented as a global popularity claim.</Text>
         </View>
         {rankedBooks.length > 0 ? (
           <View style={[styles.list, { borderTopColor: colors.border }]}>
