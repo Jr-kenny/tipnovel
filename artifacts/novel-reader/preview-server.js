@@ -4,9 +4,11 @@
  * The Expo web export uses experiments.baseUrl "/app" (see app.json), so the
  * built index.html references /app/_expo/... assets. Plain static servers
  * (python http.server, npx serve) serve dist/ at root and 404 those assets,
- * which shows as a white screen. This tiny server mirrors the Vercel rewrites:
- *   /            -> redirect to /app/
- *   /app/*       -> dist/*  (SPA fallback to dist/index.html)
+ * which shows as a white screen. This tiny server mirrors the production layout
+ * built by scripts/prepare-landing.js:
+ *   /            -> dist/index.html (landing page)
+ *   /app/*       -> dist/app/*    (the reader, SPA fallback to dist/app/index.html)
+ *   anything else -> dist/*       (landing assets, manifest)
  *
  * Run from this directory:  node preview-server.js   (serves port 3000)
  * Zero dependencies, Node built-ins only.
@@ -45,15 +47,23 @@ const server = http.createServer((req, res) => {
   let p = url.pathname;
 
   if (p === "/") {
-    res.writeHead(302, { location: "/app/" });
-    res.end();
-    return;
+    return send(res, path.join(DIST, "index.html"));
   }
   if (p === "/app" || p === "/app/") {
-    return send(res, path.join(DIST, "index.html"));
+    return send(res, path.join(DIST, "app", "index.html"));
   }
   if (p.startsWith("/app/")) {
     p = p.slice(4);
+    const file = path.join(DIST, decodeURIComponent(p));
+    if (!file.startsWith(DIST)) {
+      res.writeHead(403);
+      res.end("Forbidden");
+      return;
+    }
+    return fs.stat(file, (err, st) => {
+      if (!err && st.isFile()) return send(res, file);
+      send(res, path.join(DIST, "app", "index.html"));
+    });
   }
   const file = path.join(DIST, decodeURIComponent(p));
   if (!file.startsWith(DIST)) {
