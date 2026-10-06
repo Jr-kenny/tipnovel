@@ -300,7 +300,12 @@ export async function readAuthorStats(authorId: `0x${string}`): Promise<AuthorSt
   }
 }
 
-export async function sendTip(authorId: `0x${string}`, amount: bigint, memo: string): Promise<Hash> {
+export async function sendTip(
+  authorId: `0x${string}`,
+  amount: bigint,
+  memo: string,
+  onProgress?: (stage: 'approve' | 'tip') => void,
+): Promise<Hash> {
   if (!VAULT_DEPLOYED) throw new TipError('failed', 'Tipping is not live yet. Check back soon.');
   const active = session;
   if (!active) throw new TipError('no-wallet', 'Connect a wallet to send a tip.');
@@ -329,6 +334,7 @@ export async function sendTip(authorId: `0x${string}`, amount: bigint, memo: str
       args: [active.address, TIP_VAULT_ADDRESS],
     });
     if (allowance < amount) {
+      onProgress?.('approve');
       const approveHash = await walletClient.writeContract({
         address: USDC_ADDRESS,
         abi: ERC20_ABI,
@@ -338,6 +344,7 @@ export async function sendTip(authorId: `0x${string}`, amount: bigint, memo: str
       });
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
     }
+    onProgress?.('tip');
     const tipHash = await walletClient.writeContract({
       address: TIP_VAULT_ADDRESS,
       abi: VAULT_ABI,
