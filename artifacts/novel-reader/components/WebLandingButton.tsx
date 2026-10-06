@@ -9,7 +9,7 @@ export function WebLandingButton({ color }: { color: string }) {
 
   return (
     <Pressable
-      accessibilityLabel="Open Prime Novel landing page"
+      accessibilityLabel="Open TipNovel landing page"
       accessibilityRole="link"
       hitSlop={8}
       onPress={openLandingPage}
