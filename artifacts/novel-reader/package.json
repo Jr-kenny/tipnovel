@@ -59,6 +59,7 @@
   "dependencies": {
     "@expo-google-fonts/atkinson-hyperlegible": "^0.4.1",
     "@expo-google-fonts/merriweather": "^0.4.2",
+    "@walletconnect/universal-provider": "^2.25.0",
     "css-select": "^5.2.2",
     "domhandler": "^5.0.3",
     "expo-camera": "~17.0.10",
@@ -70,6 +71,7 @@
     "expo-navigation-bar": "^5.0.10",
     "expo-screen-orientation": "~9.0.9",
     "expo-sqlite": "~16.0.10",
-    "htmlparser2": "^9.1.0"
+    "htmlparser2": "^9.1.0",
+    "viem": "^2.57.3"
   }
 }
