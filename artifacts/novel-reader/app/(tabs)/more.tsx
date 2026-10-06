@@ -40,7 +40,7 @@ export default function MoreScreen() {
         ? `You're up to date · ${version}`
         : updateState === 'error'
           ? 'Unable to check for updates'
-          : `Prime Novel ${version} · Check for updates`;
+          : `TipNovel ${version} · Check for updates`;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
