@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Prime Novel",
+    "slug": "novel-reader",
+    "description": "Prime Novel is a calm, native reading app for discovering, organizing, and reading novels. Customize themes, fonts, text size, spacing, and reading modes, save progress offline, manage downloads, and return to the exact place you stopped.",
+    "version": "1.0.3",
+    "orientation": "default",
+    "icon": "./assets/images/icon-launcher.png",
+    "scheme": "novel-reader",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "bundleIdentifier": "com.primehouse.primenovel",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.primehouse.primenovel"
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://replit.com/"
+        }
+      ],
+      "expo-camera",
+      "expo-font",
+      "expo-web-browser",
+      "./plugins/withAlternateAppIcons.js",
+      "./plugins/withInstallPackagesPermission.js"
+    ],
+    "experiments": {
+      "baseUrl": "/app",
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "82f8a4c7-4b48-4877-838b-3b54bebf8649"
+      }
+    },
+    "owner": "primeisles"
+  }
+}

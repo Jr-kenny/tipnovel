@@ -1,0 +1,201 @@
+import { Feather } from '@expo/vector-icons';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BookCover } from '@/components/BookCover';
+import { SearchResultsSkeleton } from '@/components/LoadingSkeleton';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { useColors } from '@/hooks/useColors';
+import { useReader } from '@/context/ReaderContext';
+import { useCatalog } from '@/context/CatalogContext';
+import { useApp } from '@/context/AppContext';
+import type { PrimeNovel } from '@/utils/prime-source-adapters';
+
+export default function DiscoverScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const { books, setActiveBook } = useReader();
+  const { recentSearches, recordRecentSearch } = useApp();
+  const { results, searching, search, searchError, clearResults } = useCatalog();
+  const { q } = useLocalSearchParams<{ q?: string }>();
+  const routeQuery = Array.isArray(q) ? q[0] : q;
+  const [query, setQuery] = useState(routeQuery ?? '');
+  const recentSearchCardWidth = Math.max(76, Math.floor((windowWidth - 44 - 20) / 3));
+
+  useEffect(() => {
+    if (routeQuery && routeQuery !== query) setQuery(routeQuery);
+  }, [query, routeQuery]);
+
+  useEffect(() => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+      clearResults();
+      return;
+    }
+    const timer = setTimeout(() => {
+      void search(trimmedQuery);
+    }, 320);
+    return () => clearTimeout(timer);
+  }, [clearResults, query, search]);
+
+  const submitSearch = () => {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < 1) return;
+    recordRecentSearch(trimmedQuery);
+    void search(trimmedQuery);
+  };
+
+  const openRecentSearch = (recentQuery: string) => {
+    if (query.trim() === recentQuery) {
+      void search(recentQuery);
+      return;
+    }
+    setQuery(recentQuery);
+  };
+
+  const openNovel = (novel: PrimeNovel) => {
+    router.push({ pathname: '/novel', params: { sourceId: novel.sourceId, sourceRecordId: novel.sourceRecordId ?? '', title: novel.title, url: novel.url, coverUrl: novel.coverUrl ?? '' } });
+  };
+
+  const clearSearch = () => {
+    setQuery('');
+    clearResults();
+  };
+
+  return (
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <ScreenHeader eyebrow="Find your next world" title="Discover" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
+        <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Feather name="search" size={17} color={colors.mutedForeground} />
+          <TextInput
+            accessibilityLabel="Search novels"
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={setQuery}
+            onSubmitEditing={submitSearch}
+            placeholder="Search novels"
+            placeholderTextColor={colors.mutedForeground}
+            returnKeyType="search"
+            style={[styles.searchInput, { color: colors.foreground }]}
+            value={query}
+          />
+          {query ? <Pressable accessibilityLabel="Clear search" hitSlop={10} onPress={clearSearch}><Feather name="x" size={16} color={colors.mutedForeground} /></Pressable> : null}
+          <Pressable accessibilityLabel="Search" accessibilityRole="button" disabled={query.trim().length < 1 || searching} hitSlop={10} onPress={submitSearch}>
+            <Feather name="arrow-right" size={17} color={query.trim().length >= 1 ? colors.primary : colors.mutedForeground} />
+          </Pressable>
+        </View>
+        {query.trim().length >= 1 ? (
+          <>
+            <View style={styles.resultHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Results</Text>
+            </View>
+            {searchError ? <Text style={[styles.sectionCopy, { color: colors.mutedForeground }]}>{searchError}</Text> : null}
+            {searching && results.length === 0 ? <SearchResultsSkeleton /> : (
+              <View style={styles.resultsList}>
+                {results.map((novel) => {
+                  return (
+                    <Pressable key={novel.id} onPress={() => openNovel(novel)} style={({ pressed }) => [styles.resultRow, { borderBottomColor: colors.border, opacity: pressed ? 0.72 : 1 }]}>
+                      <BookCover source={novel.coverUrl || require('@/assets/images/cover-lighthouse.jpg')} width={58} height={82} />
+                      <View style={styles.resultCopy}>
+                        <Text style={[styles.resultTitle, { color: colors.foreground }]} numberOfLines={2}>{novel.title}</Text>
+                        {novel.author ? <Text style={[styles.resultAuthor, { color: colors.mutedForeground }]} numberOfLines={1}>{novel.author}</Text> : null}
+                        <Text style={[styles.resultSource, { color: colors.primary }]}>{novel.genres?.[0] ?? 'Story'}</Text>
+                      </View>
+                      <Feather name="chevron-right" size={17} color={colors.mutedForeground} />
+                    </Pressable>
+                  );
+                })}
+                {searching ? <Text style={[styles.searchingMore, { color: colors.mutedForeground }]}>Searching more sources</Text> : null}
+                {!searching && results.length === 0 && !searchError ? <Text style={[styles.empty, { color: colors.mutedForeground }]}>No novels found.</Text> : null}
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            {recentSearches.length > 0 ? (
+              <View style={styles.recentSection}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={[styles.sectionTitle, styles.sectionTitleInset, { color: colors.foreground }]}>Recent searches</Text>
+                  <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>{recentSearches.length}/10</Text>
+                </View>
+                <ScrollView
+                  contentContainerStyle={styles.recentSearchContent}
+                  decelerationRate="fast"
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  snapToAlignment="start"
+                  snapToInterval={recentSearchCardWidth + 10}
+                >
+                  {recentSearches.map((recentQuery) => (
+                    <Pressable
+                      accessibilityLabel={`Search again for ${recentQuery}`}
+                      key={recentQuery}
+                      onPress={() => openRecentSearch(recentQuery)}
+                      style={({ pressed }) => [styles.recentSearchCard, { width: recentSearchCardWidth, backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.72 : 1 }]}
+                    >
+                      <View style={styles.recentSearchIconRow}>
+                        <Feather name="clock" size={15} color={colors.primary} />
+                        <Feather name="arrow-up-right" size={14} color={colors.mutedForeground} />
+                      </View>
+                      <Text style={[styles.recentSearchText, { color: colors.foreground }]} numberOfLines={2}>{recentQuery}</Text>
+                      <Text style={[styles.recentSearchHint, { color: colors.mutedForeground }]}>Search again</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+            {recentSearches.length === 0 && books.length > 0 ? (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>From your library</Text>
+                <View style={styles.coverGrid}>
+                  {books.map((book) => (
+                    <Pressable key={book.id} onPress={() => { setActiveBook(book.id); router.push('/chapters'); }} style={({ pressed }) => [styles.discoverBook, { opacity: pressed ? 0.7 : 1 }]}>
+                      <BookCover source={book.cover} width={112} height={164} favorite={book.favorite} />
+                      <Text style={[styles.bookTitle, { color: colors.foreground }]} numberOfLines={2}>{book.title}</Text>
+                      <Text style={[styles.bookGenre, { color: colors.mutedForeground }]}>{book.genre}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            ) : recentSearches.length === 0 ? (
+              <Text style={[styles.empty, { color: colors.mutedForeground }]}>Search for a novel to add it to your shelf.</Text>
+            ) : null}
+          </>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  searchBox: { marginHorizontal: 22, height: 46, borderWidth: 1, borderRadius: 23, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, gap: 10 },
+  searchInput: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 13 },
+  resultHeader: { paddingHorizontal: 22, marginTop: 22, marginBottom: 8, flexDirection: 'row', alignItems: 'baseline', gap: 9 },
+  sectionTitle: { fontFamily: 'Georgia', fontSize: 20, paddingHorizontal: 22, marginTop: 22 },
+  sectionMeta: { fontFamily: 'Inter_400Regular', fontSize: 12 },
+  sectionCopy: { fontFamily: 'Inter_400Regular', fontSize: 12, paddingHorizontal: 22, marginTop: 5 },
+  resultsList: { marginTop: 8 },
+  searchingMore: { fontFamily: 'Inter_400Regular', fontSize: 11, paddingHorizontal: 22, paddingVertical: 14 },
+  resultRow: { minHeight: 100, paddingHorizontal: 22, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', gap: 13, borderBottomWidth: StyleSheet.hairlineWidth },
+  resultCopy: { flex: 1, gap: 5 },
+  resultTitle: { fontFamily: 'Georgia', fontSize: 16, lineHeight: 20 },
+  resultAuthor: { fontFamily: 'Inter_400Regular', fontSize: 11 },
+  resultSource: { fontFamily: 'Inter_600SemiBold', fontSize: 10 },
+  empty: { fontFamily: 'Georgia', fontSize: 17, textAlign: 'center', marginTop: 60, paddingHorizontal: 30 },
+  recentSection: { marginTop: 22 },
+  sectionHeaderRow: { paddingHorizontal: 22, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  sectionTitleInset: { paddingHorizontal: 0, marginTop: 0 },
+  recentSearchContent: { paddingHorizontal: 22, paddingTop: 14, gap: 10 },
+  recentSearchCard: { minHeight: 112, borderWidth: 1, borderRadius: 14, padding: 12, justifyContent: 'space-between' },
+  recentSearchIconRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  recentSearchText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, lineHeight: 16, marginTop: 8 },
+  recentSearchHint: { fontFamily: 'Inter_400Regular', fontSize: 9, marginTop: 8 },
+  coverGrid: { paddingHorizontal: 22, paddingTop: 22, flexDirection: 'row', flexWrap: 'wrap', gap: 20 },
+  discoverBook: { width: 112 },
+  bookTitle: { fontFamily: 'Inter_500Medium', fontSize: 12, lineHeight: 16, marginTop: 8 },
+  bookGenre: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: 3 },
+});

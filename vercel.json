@@ -1,0 +1,45 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @workspace/novel-reader exec expo export --platform web && pnpm --filter @workspace/novel-reader exec node scripts/prepare-landing.js",
+  "outputDirectory": "artifacts/novel-reader/dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "cleanUrls": true,
+  "framework": null,
+  "headers": [
+    {
+      "source": "/downloads/prime-novel-android.apk",
+      "headers": [
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"Prime-Novel.apk\""
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/downloads/prime-novel-android.apk",
+      "destination": "https://github.com/Jr-kenny/Prime-Novel/releases/download/v1.0.1-android/Prime-Novel-1.0.1.apk"
+    },
+    {
+      "source": "/app/_expo/:path*",
+      "destination": "/_expo/:path*"
+    },
+    {
+      "source": "/app/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/app/favicon.ico",
+      "destination": "/favicon.ico"
+    },
+    {
+      "source": "/app",
+      "destination": "/app"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/app"
+    }
+  ]
+}

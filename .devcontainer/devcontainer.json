@@ -1,0 +1,20 @@
+{
+  "name": "TipNovel (Arc Hackathon Clone)",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/feature-git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss"]
+    }
+  },
+  "forwardPorts": [8081, 3000, 19000, 19006],
+  "portsAttributes": {
+    "8081": { "label": "Expo Metro", "onAutoForward": "notify" },
+    "19006": { "label": "Expo Web", "onAutoForward": "openPreview" },
+    "3000": { "label": "Web demo", "onAutoForward": "openPreview" }
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@10.33.2 --activate && pnpm --version && echo '--- TipNovel: cloud install starts (runs on GitHub servers, not your data) ---' && pnpm install --prefer-offline=false",
+  "remoteUser": "node"
+}
