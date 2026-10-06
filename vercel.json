@@ -7,19 +7,19 @@
   "framework": null,
   "headers": [
     {
-      "source": "/downloads/prime-novel-android.apk",
+      "source": "/downloads/tipnovel-android.apk",
       "headers": [
         {
           "key": "Content-Disposition",
-          "value": "attachment; filename=\"Prime-Novel.apk\""
+          "value": "attachment; filename=\"TipNovel.apk\""
         }
       ]
     }
   ],
   "rewrites": [
     {
-      "source": "/downloads/prime-novel-android.apk",
-      "destination": "https://github.com/Jr-kenny/Prime-Novel/releases/download/v1.0.1-android/Prime-Novel-1.0.1.apk"
+      "source": "/downloads/tipnovel-android.apk",
+      "destination": "https://github.com/Jr-kenny/tipnovel/releases/download/v1.0.1-android/TipNovel-1.0.1.apk"
     },
     {
       "source": "/app/_expo/:path*",
