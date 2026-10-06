@@ -283,6 +283,36 @@ export async function readUsdcBalance(address: Address): Promise<bigint> {
   return publicClient.readContract({ address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: [address] });
 }
 
+export async function verifyAuthor(authorId: `0x${string}`, wallet: Address): Promise<Hash> {
+  if (!VAULT_DEPLOYED) throw new TipError('failed', 'Tipping is not live yet. Check back soon.');
+  const active = session;
+  if (!active) throw new TipError('no-wallet', 'Connect the owner wallet to review claims.');
+  const provider = Platform.OS === 'web' ? webProvider() : wcProvider;
+  if (!provider) throw new TipError('no-wallet', 'Connect the owner wallet to review claims.');
+  const walletClient = createWalletClient({
+    chain: ARC,
+    transport: custom(provider as unknown as EIP1193Provider),
+    account: active.address,
+  });
+  try {
+    const hash = await walletClient.writeContract({
+      address: TIP_VAULT_ADDRESS,
+      abi: VAULT_ABI,
+      functionName: 'verifyAuthor',
+      args: [authorId, wallet],
+      chain: ARC,
+    });
+    await publicClient.waitForTransactionReceipt({ hash });
+    return hash;
+  } catch (error) {
+    if (error instanceof TipError) throw error;
+    if (isRejection(error)) throw new TipError('rejected', 'Signature request was dismissed. Nothing was sent.');
+    throw new TipError('failed', 'Verification failed. Nothing was sent.');
+  }
+}
+  return publicClient.readContract({ address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: [address] });
+}
+
 export async function readAuthorStats(authorId: `0x${string}`): Promise<AuthorStats> {
   if (!VAULT_DEPLOYED) {
     return { deployed: false, balance: 0n, tippers: 0n, verified: false, wallet: null };
