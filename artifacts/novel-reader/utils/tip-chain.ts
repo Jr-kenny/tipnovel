@@ -15,7 +15,7 @@ export const TIP_PRESETS = [0.1, 2, 5] as const;
 
 export const WALLET_CONNECT_PROJECT_ID = '';
 
-export const OWNER_ADDRESS = '';
+export const OWNER_ADDRESS: string = '';
 
 export const VAULT_ABI = [
   {
