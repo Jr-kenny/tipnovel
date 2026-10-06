@@ -1,0 +1,16 @@
+{
+  "name": "tipnovel-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TipNovel TipVault contract: compile and deploy tooling (Arc mainnet).",
+  "scripts": {
+    "compile": "node compile.mjs",
+    "deploy": "node deploy.mjs"
+  },
+  "devDependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "solc": "0.8.24",
+    "viem": "^2.57.3"
+  }
+}
