@@ -24,7 +24,7 @@ export default function CategoriesScreen() {
           <View style={[styles.selected, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.selectedEyebrow, { color: colors.primary }]}>Browse the catalogue</Text>
             <Text style={[styles.selectedTitle, { color: colors.foreground }]}>{category}</Text>
-            <Text style={[styles.selectedCopy, { color: colors.mutedForeground }]}>Search Prime Novel’s enabled sources for {category.toLocaleLowerCase()} stories.</Text>
+            <Text style={[styles.selectedCopy, { color: colors.mutedForeground }]}>Search TipNovel’s enabled sources for {category.toLocaleLowerCase()} stories.</Text>
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push({ pathname: '/discover', params: { q: category } })}
