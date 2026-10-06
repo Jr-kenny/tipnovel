@@ -85,7 +85,7 @@ export default function FeedbackScreen() {
   const [replyEmail, setReplyEmail] = useState('');
   const [error, setError] = useState<string>();
   const [status, setStatus] = useState<string>();
-  const appDetails = useMemo(() => `Prime Novel ${Constants.expoConfig?.version ?? '1.0.0'} · ${platformDetails()}`, []);
+  const appDetails = useMemo(() => `TipNovel ${Constants.expoConfig?.version ?? '1.0.0'} · ${platformDetails()}`, []);
 
   const sendFeedback = async () => {
     const trimmedMessage = message.trim();
@@ -102,7 +102,7 @@ export default function FeedbackScreen() {
     }
 
     const categoryLabel = feedbackCategories.find((item) => item.value === category)?.label ?? 'General feedback';
-    const subject = `[Prime Novel] ${categoryLabel}`;
+    const subject = `[TipNovel] ${categoryLabel}`;
     const body = [
       `Feedback type: ${categoryLabel}`,
       '',
@@ -137,7 +137,7 @@ export default function FeedbackScreen() {
           <View style={[styles.introIcon, { backgroundColor: colors.secondary }]}>
             <Feather name="message-circle" size={21} color={colors.primary} />
           </View>
-          <Text style={[styles.introTitle, { color: colors.foreground }]}>Help shape Prime Novel</Text>
+          <Text style={[styles.introTitle, { color: colors.foreground }]}>Help shape TipNovel</Text>
           <Text style={[styles.introCopy, { color: colors.mutedForeground }]}>Tell us what worked, what felt difficult, or what you want to see next. Specific examples help us act faster.</Text>
         </View>
 
@@ -165,7 +165,7 @@ export default function FeedbackScreen() {
           accessibilityLabel="Feedback message"
           multiline
           onChangeText={(value) => { setMessage(value); setError(undefined); setStatus(undefined); }}
-          placeholder="What happened, or what would make Prime Novel better?"
+          placeholder="What happened, or what would make TipNovel better?"
           placeholderTextColor={colors.mutedForeground}
           style={[styles.messageInput, { backgroundColor: colors.card, borderColor: error ? colors.destructive : colors.border, color: colors.foreground }]}
           textAlignVertical="top"
@@ -204,7 +204,7 @@ export default function FeedbackScreen() {
           <Feather name="send" size={16} color={colors.primaryForeground} />
           <Text style={[styles.sendButtonText, { color: colors.primaryForeground }]}>Send feedback</Text>
         </Pressable>
-        <Text style={[styles.recipientHint, { color: colors.mutedForeground }]}>Opens your email app and addresses the Prime Novel team.</Text>
+        <Text style={[styles.recipientHint, { color: colors.mutedForeground }]}>Opens your email app and addresses the TipNovel team.</Text>
       </KeyboardAwareScrollViewCompat>
     </View>
   );
