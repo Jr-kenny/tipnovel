@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @title TipNovelVault - USDC tipping vault for open-reader authors on Arc
-/// @notice Hackathon PoC: single vault maps authorId -> USDC balance (6 decimals).
-/// Arc uses USDC for gas + ERC-20 transfers. We use ERC-20 path only for demo
-/// to avoid native/ERC-20 decimal confusion (18 vs 6). AuthorId is
-/// keccak256(normalized_author_name + source) computed off-chain.
+/// @title TipNovelVault - USDC tipping vault for authors on Arc
+/// @notice One vault holds tips for every author, keyed by authorId.
+/// ERC-20 path only: Arc prices gas in USDC, and the ERC-20 interface uses
+/// 6 decimals. AuthorId is keccak256(normalized_author_name + source).
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
