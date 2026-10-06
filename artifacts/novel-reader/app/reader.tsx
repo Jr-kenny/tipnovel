@@ -849,6 +849,7 @@ export default function ReaderScreen() {
     if (!suppressVerticalSaveRef.current) savePosition(currentChapter, { verticalOffset: chapterOffset, chapterProgress: scrollProgress(chapterOffset, chapterMaxOffset) });
     const reachedEnd = contentSize.height > layoutMeasurement.height + 40 && offset + layoutMeasurement.height >= contentSize.height - 80;
     if (hasScrolledRef.current && reachedEnd) {
+      maybeShowTipPrompt(currentChapter);
       if (hasNextChapter) {
         advanceToNextChapter();
       } else if (finalChapterMarkedRef.current !== activeBook.chapter) {
@@ -1068,6 +1069,17 @@ export default function ReaderScreen() {
             <WebLandingButton color={palette.text} />
             <Pressable accessibilityLabel="Add bookmark" accessibilityRole="button" hitSlop={12} onPress={() => addBookmark(activeBook.chapter, activeBook.id)} testID="reader-bookmark">
               <Feather name="bookmark" size={19} color={isChapterBookmarked(activeBook.chapter, activeBook.id) ? palette.accent : palette.text} />
+            </Pressable>
+            <Pressable
+              accessibilityLabel={tippableAuthor ? `Tip ${tippableAuthor}` : 'Tipping unavailable for this book'}
+              accessibilityRole="button"
+              disabled={!tippableAuthorId}
+              hitSlop={12}
+              onPress={() => setTipSheetOpen(true)}
+              style={{ opacity: tippableAuthorId ? 1 : 0.32 }}
+              testID="reader-tip"
+            >
+              <Feather name="gift" size={19} color={palette.text} />
             </Pressable>
           </View>
       </Animated.View>
