@@ -50,6 +50,7 @@ export default function MoreScreen() {
           <UtilityRow compact icon="download" onPress={() => router.push('/downloads')} showChevron={false} testID="more-downloads" title="Downloads" />
           <UtilityRow compact icon="clock" onPress={() => router.push('/history')} showChevron={false} testID="more-history" title="History" />
           <UtilityRow compact icon="bookmark" onPress={() => router.push('/categories')} showChevron={false} testID="more-categories" title="Categories" />
+          <UtilityRow compact description="Writers claim waiting tips" icon="award" onPress={() => router.push('/claim')} showChevron={false} testID="more-claim" title="Claim author tips" />
           <UtilityRow compact icon="bar-chart-2" onPress={() => router.push('/analytics')} showChevron={false} testID="more-analytics" title="Analytics" />
           <UtilityRow compact icon="book-open" onPress={() => router.push('/reader-settings')} showChevron={false} testID="more-reader" title="Reader" />
           <UtilityRow compact icon="grid" onPress={() => router.push('/view-settings')} showChevron={false} testID="more-view" title="View" />
