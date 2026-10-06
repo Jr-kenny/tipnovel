@@ -42,7 +42,7 @@ export default function ShareLinkScreen() {
     if (scanLocked) return;
     setScanLocked(true);
     if (!/^https?:\/\/[^\s]+$/i.test(data.trim())) {
-      setStatus('That QR code is not a Prime Novel link');
+      setStatus('That QR code is not a TipNovel link');
       setScannerOpen(false);
       return;
     }
