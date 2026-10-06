@@ -8,7 +8,7 @@
  * Run from this directory:  pnpm exec tsx preview-catalog.ts  (port 3101)
  */
 import http from 'node:http';
-import handler from '../../../api/catalog.ts';
+import handler from '../../api/catalog.ts';
 
 type Query = Record<string, string | string[]>;
 
