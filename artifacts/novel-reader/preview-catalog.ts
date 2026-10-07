@@ -23,9 +23,9 @@ const routes: Array<[string, Handler]> = [
   ['/api/catalog', catalogHandler as Handler],
   ['/api/claims/submit', claimsSubmitHandler as Handler],
   ['/api/claims/followup', claimsFollowupHandler as Handler],
-  ['/api/admin', adminHandler as Handler],
   ['/api/admin/claims', adminClaimsHandler as Handler],
   ['/api/admin/review', adminReviewHandler as Handler],
+  ['/api/admin', adminHandler as Handler],
 ];
 
 function readBody(req: http.IncomingMessage): Promise<unknown> {
