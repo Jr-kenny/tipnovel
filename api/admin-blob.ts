@@ -30,7 +30,7 @@ export default async function handler(request: HandlerRequest, response: Handler
     return;
   }
   const pathname = queryValue(request, 'path');
-  if (!pathname.startsWith('claims/')) {
+  if (!pathname || pathname.includes('..') || pathname.startsWith('/')) {
     response.status(404).json({ error: 'Not found.' });
     return;
   }
