@@ -12,12 +12,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import catalogHandler from '../../api/catalog.ts';
-import claimsSubmitHandler from '../../api/claims-submit.ts';
-import claimsFollowupHandler from '../../api/claims-followup.ts';
+import claimsSubmitHandler from '../../api/claims/submit.ts';
+import claimsFollowupHandler from '../../api/claims/followup.ts';
 import adminHandler from '../../api/admin.ts';
-import adminBlobHandler from '../../api/admin-blob.ts';
-import adminClaimsHandler from '../../api/admin-claims.ts';
-import adminReviewHandler from '../../api/admin-review.ts';
+import adminBlobHandler from '../../api/admin/blob.ts';
+import adminClaimsHandler from '../../api/admin/claims.ts';
+import adminReviewHandler from '../../api/admin/review.ts';
 
 type Query = Record<string, string | string[]>;
 type Handler = (request: Record<string, unknown>, response: Record<string, unknown>) => Promise<unknown>;
