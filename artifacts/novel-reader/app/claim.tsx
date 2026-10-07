@@ -32,6 +32,12 @@ function plainError(error: unknown): string {
   return 'Something went wrong. Try again.';
 }
 
+function usdcToUsd(amount: string): string {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return '0.00';
+  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export default function ClaimScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -160,60 +166,72 @@ export default function ClaimScreen() {
         <View style={styles.content}>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.cardTitle, { color: colors.foreground }]}>Find your tips</Text>
-            <TextInput
-              accessibilityLabel="Author name"
-              autoCapitalize="words"
-              onChangeText={(value) => {
-                setAuthorName(value);
-                setStats(null);
-                setSubmitted(false);
-              }}
-              placeholder="Author name as it appears on the book"
-              placeholderTextColor={colors.mutedForeground}
-              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
-              value={authorName}
-            />
-            <Pressable
-              accessibilityRole="button"
-              disabled={!checkedAuthorId || lookupBusy}
-              onPress={() => void handleLookup()}
-              style={[styles.action, { backgroundColor: colors.primary, opacity: !checkedAuthorId || lookupBusy ? 0.45 : 1 }]}
-            >
-              {lookupBusy ? (
-                <ActivityIndicator color={colors.primaryForeground} />
-              ) : (
-                <Text style={[styles.actionText, { color: colors.primaryForeground }]}>Check for tips</Text>
-              )}
-            </Pressable>
-            {lookupFailed ? (
-              <Text style={[styles.note, { color: colors.mutedForeground }]}>Author totals are unavailable right now.</Text>
-            ) : null}
-            {stats ? (
-              <View>
-                <View style={[styles.statPanel, { borderColor: colors.border }]}>
-                  <View style={styles.statCell}>
-                    <Text style={[styles.statEyebrow, { color: colors.mutedForeground }]}>UNCLAIMED</Text>
-                    <Text style={[styles.statValue, { color: colors.foreground }]}>
-                      {formatUnits(stats.balance, USDC_DECIMALS)}
-                      <Text style={[styles.statUnit, { color: colors.mutedForeground }]}> USDC</Text>
+            <View style={styles.lookupRow}>
+              <View style={styles.lookupLeft}>
+                <TextInput
+                  accessibilityLabel="Author name"
+                  autoCapitalize="words"
+                  onChangeText={(value) => {
+                    setAuthorName(value);
+                    setStats(null);
+                    setSubmitted(false);
+                  }}
+                  placeholder="Author name as it appears on the book"
+                  placeholderTextColor={colors.mutedForeground}
+                  style={[styles.input, styles.lookupInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+                  value={authorName}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={!checkedAuthorId || lookupBusy}
+                  onPress={() => void handleLookup()}
+                  style={[styles.action, styles.lookupAction, { backgroundColor: colors.primary, opacity: !checkedAuthorId || lookupBusy ? 0.45 : 1 }]}
+                >
+                  {lookupBusy ? (
+                    <ActivityIndicator color={colors.primaryForeground} />
+                  ) : (
+                    <Text style={[styles.actionText, { color: colors.primaryForeground }]}>Check for tips</Text>
+                  )}
+                </Pressable>
+                {lookupFailed ? (
+                  <Text style={[styles.note, { color: colors.mutedForeground }]}>Author totals are unavailable right now.</Text>
+                ) : null}
+              </View>
+              <View style={[styles.statPanel, { borderColor: colors.border }]}>
+                <Text style={[styles.statEyebrow, { color: colors.mutedForeground }]}>UNCLAIMED</Text>
+                {stats ? (
+                  <Text style={[styles.statValue, { color: colors.foreground }]}>
+                    ${usdcToUsd(formatUnits(stats.balance, USDC_DECIMALS))}
+                    <Text style={[styles.statUnit, { color: colors.mutedForeground }]}>
+                      {`  ${formatUnits(stats.balance, USDC_DECIMALS)} USDC`}
                     </Text>
-                  </View>
-                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                  <View style={styles.statCell}>
-                    <Text style={[styles.statEyebrow, { color: colors.mutedForeground }]}>TIPPERS</Text>
-                    <Text style={[styles.statValue, { color: colors.foreground }]}>{stats.tippers.toString()}</Text>
-                  </View>
-                </View>
-                <View style={styles.statusRow}>
-                  <Feather
-                    name={stats.verified ? 'check-circle' : 'clock'}
-                    size={14}
-                    color={colors.primary}
-                  />
-                  <Text style={[styles.statusText, { color: colors.mutedForeground }]}>
-                    {stats.verified ? 'Verified author.' : 'Not claimed yet. Tips are held safely until the author is verified.'}
                   </Text>
-                </View>
+                ) : (
+                  <Text style={[styles.statValue, { color: colors.mutedForeground }]}>—</Text>
+                )}
+                <View style={[styles.statDividerWide, { backgroundColor: colors.border }]} />
+                {stats ? (
+                  <Text style={[styles.tippersLine, { color: colors.foreground }]}>
+                    {stats.tippers.toString()}
+                    <Text style={[styles.statUnit, { color: colors.mutedForeground }]}>
+                      {stats.tippers === 1n ? '  tipper' : '  tippers'}
+                    </Text>
+                  </Text>
+                ) : (
+                  <Text style={[styles.tippersLine, { color: colors.mutedForeground }]}>—</Text>
+                )}
+              </View>
+            </View>
+            {stats ? (
+              <View style={styles.statusRow}>
+                <Feather
+                  name={stats.verified ? 'check-circle' : 'clock'}
+                  size={14}
+                  color={colors.primary}
+                />
+                <Text style={[styles.statusText, { color: colors.mutedForeground }]}>
+                  {stats.verified ? 'Verified author.' : 'Not claimed yet. Tips are held safely until the author is verified.'}
+                </Text>
               </View>
             ) : null}
           </View>
@@ -273,7 +291,7 @@ export default function ClaimScreen() {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.cardTitle, { color: colors.foreground }]}>Withdraw</Text>
               <View style={[styles.statPanel, { borderColor: colors.border }]}>
-                <View style={styles.statCell}>
+                <View>
                   <Text style={[styles.statEyebrow, { color: colors.mutedForeground }]}>WAITING</Text>
                   <Text style={[styles.statValue, { color: colors.foreground }]}>
                     {formatUnits(stats.balance, USDC_DECIMALS)}
@@ -359,12 +377,16 @@ const styles = StyleSheet.create({
   actionText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   note: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, marginTop: 8 },
   error: { fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 17, marginTop: 10 },
-  statPanel: { flexDirection: 'row', borderWidth: 1, borderRadius: 14, marginTop: 14 },
-  statCell: { flex: 1, paddingVertical: 13, paddingHorizontal: 14 },
-  statDivider: { width: StyleSheet.hairlineWidth, marginVertical: 12 },
+  statPanel: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 14 },
   statEyebrow: { fontFamily: 'Inter_600SemiBold', fontSize: 9, letterSpacing: 1.2 },
   statValue: { fontFamily: 'Georgia', fontSize: 24, lineHeight: 29, marginTop: 5 },
   statUnit: { fontFamily: 'Inter_400Regular', fontSize: 12 },
+  statDividerWide: { height: StyleSheet.hairlineWidth, marginVertical: 10 },
+  tippersLine: { fontFamily: 'Georgia', fontSize: 17, lineHeight: 22 },
+  lookupRow: { flexDirection: 'row', gap: 12, marginTop: 12, alignItems: 'stretch' },
+  lookupLeft: { flex: 1 },
+  lookupInput: { marginTop: 0 },
+  lookupAction: { marginTop: 10 },
   statusRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 12 },
   statusText: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, flex: 1 },
   claim: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
