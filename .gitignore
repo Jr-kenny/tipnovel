@@ -53,3 +53,4 @@ Thumbs.db
 # Local-only wallet records (keys — never commit)
 .wallets.md
 *.wallets.md
+supabase/.temp/
