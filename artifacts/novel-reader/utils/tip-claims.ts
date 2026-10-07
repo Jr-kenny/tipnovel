@@ -7,7 +7,8 @@ export type ClaimRequest = {
   originPlatform: string;
   originUsername: string;
   originUrl: string;
-  evidenceUri: string;
+  evidenceUris: string[];
+  message: string;
   payoutWallet: string;
   balanceAtSubmit: string;
   status: 'pending' | 'approved';
@@ -16,12 +17,40 @@ export type ClaimRequest = {
 
 const CLAIMS_KEY = 'tipnovel.claims';
 
+type StoredClaim = Omit<Partial<ClaimRequest>, 'authorId'> & {
+  authorId: `0x${string}`;
+  evidenceUri?: string;
+  code?: string;
+};
+
+function normalize(raw: StoredClaim): ClaimRequest | null {
+  if (!raw.id || !raw.authorId || !raw.authorName) return null;
+  return {
+    id: raw.id,
+    authorName: raw.authorName,
+    authorId: raw.authorId,
+    originPlatform: raw.originPlatform ?? '',
+    originUsername: raw.originUsername ?? '',
+    originUrl: raw.originUrl ?? '',
+    evidenceUris: raw.evidenceUris ?? (raw.evidenceUri ? [raw.evidenceUri] : []),
+    message: raw.message ?? '',
+    payoutWallet: raw.payoutWallet ?? '',
+    balanceAtSubmit: raw.balanceAtSubmit ?? '0',
+    status: raw.status === 'approved' ? 'approved' : 'pending',
+    createdAt: raw.createdAt ?? Date.now(),
+  };
+}
+
 export async function loadClaims(): Promise<ClaimRequest[]> {
   try {
     const raw = await AsyncStorage.getItem(CLAIMS_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as ClaimRequest[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(raw) as StoredClaim[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((entry) => {
+      const claim = normalize(entry);
+      return claim ? [claim] : [];
+    });
   } catch {
     return [];
   }
