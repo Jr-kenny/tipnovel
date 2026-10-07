@@ -1,0 +1,11 @@
+{
+  "network": "Arc",
+  "chainId": 5042,
+  "contract": "TipNovelVault",
+  "address": "0x88c1726b506ac43cdc14d9b8aa229c7d342c5a15",
+  "deployTx": "0xd98ab88d71abe35912dda354322ab5ba53cea870ef75008e45721d19746bc36c",
+  "owner": "0x23f060eBE21CB48d7bd0F2b63fd814fe65514AaE",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "explorer": "https://explorer.arc.io/address/0x88c1726b506ac43cdc14d9b8aa229c7d342c5a15",
+  "deployedAt": "2026-10-07"
+}
