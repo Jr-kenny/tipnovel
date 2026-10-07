@@ -82,8 +82,12 @@
   }
 
   function shotHtml(ev) {
-    return '<a href="' + ev.dataUrl + '" target="_blank" rel="noopener"><img src="' +
-      ev.dataUrl + '" alt="" loading="lazy" /></a>';
+    var src = ev.path
+      ? '/api/admin/blob?key=' + encodeURIComponent(key) + '&path=' + encodeURIComponent(ev.path)
+      : ev.dataUrl;
+    if (!src) return '';
+    return '<a href="' + src + '" target="_blank" rel="noopener"><img src="' +
+      src + '" alt="" loading="lazy" /></a>';
   }
 
   function render(claims) {

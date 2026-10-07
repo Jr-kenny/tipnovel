@@ -12,6 +12,7 @@ import catalogHandler from '../../api/catalog.ts';
 import claimsSubmitHandler from '../../api/claims-submit.ts';
 import claimsFollowupHandler from '../../api/claims-followup.ts';
 import adminHandler from '../../api/admin.ts';
+import adminBlobHandler from '../../api/admin-blob.ts';
 import adminClaimsHandler from '../../api/admin-claims.ts';
 import adminReviewHandler from '../../api/admin-review.ts';
 import { getAdminKey } from '../../api/_lib/admin-key.ts';
@@ -23,6 +24,7 @@ const routes: Array<[string, Handler]> = [
   ['/api/catalog', catalogHandler as Handler],
   ['/api/claims/submit', claimsSubmitHandler as Handler],
   ['/api/claims/followup', claimsFollowupHandler as Handler],
+  ['/api/admin/blob', adminBlobHandler as Handler],
   ['/api/admin/claims', adminClaimsHandler as Handler],
   ['/api/admin/review', adminReviewHandler as Handler],
   ['/api/admin', adminHandler as Handler],
@@ -76,10 +78,12 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(self.statusCode, { 'content-type': 'application/json', ...self.headers });
       res.end(JSON.stringify(body));
     },
-    send(body: string) {
+    send(body: string | Buffer) {
       const self = this as { statusCode: number; headers: Record<string, string> };
       const headers = { ...self.headers };
-      if (!headers['Content-Type'] && !headers['content-type']) headers['content-type'] = 'text/html; charset=utf-8';
+      if (!headers['Content-Type'] && !headers['content-type']) {
+        headers['content-type'] = typeof body === 'string' ? 'text/html; charset=utf-8' : 'application/octet-stream';
+      }
       res.writeHead(self.statusCode, headers);
       res.end(body);
     },
