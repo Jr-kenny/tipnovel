@@ -1,7 +1,5 @@
 import { checkAdminKey } from './_lib/admin-key';
 
-import { checkAdminKey } from './_lib/admin-key';
-
 type QueryValue = string | string[] | undefined;
 
 type HandlerRequest = {
@@ -212,9 +210,6 @@ export default async function handler(
     response.status(404).json({ error: 'Not found.' });
     return;
   }
-  response.setHeader('Content-Type', 'text/html; charset=utf-8');
-  response.send(PAGE);
-}
   response.setHeader('Content-Type', 'text/html; charset=utf-8');
   response.send(PAGE);
 }
