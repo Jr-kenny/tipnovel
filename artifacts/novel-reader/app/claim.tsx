@@ -405,11 +405,17 @@ export default function ClaimScreen() {
               <Text style={[styles.cardTitle, { color: colors.foreground }]}>Claims on this device</Text>
               {claims.map((claim) => (
                 <View key={claim.id} style={[styles.claim, { borderColor: colors.border }]}>
+                  {claim.evidenceUri ? (
+                    <Image accessibilityLabel="Claim evidence" source={{ uri: claim.evidenceUri }} style={styles.claimThumb} />
+                  ) : null}
                   <View style={styles.claimCopy}>
                     <Text style={[styles.claimTitle, { color: colors.foreground }]}>{claim.authorName}</Text>
                     <Text style={[styles.claimAmount, { color: colors.foreground }]}>
                       {claim.balanceAtSubmit}
                       <Text style={[styles.statUnit, { color: colors.mutedForeground }]}> USDC</Text>
+                    </Text>
+                    <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>
+                      {claim.originPlatform} · {claim.originUsername}
                     </Text>
                     <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>
                       {claim.status === 'approved' ? 'Approved' : 'Under review'}
@@ -466,6 +472,7 @@ const styles = StyleSheet.create({
   statusText: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, flex: 1 },
   claim: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
   claimCopy: { flex: 1 },
+  claimThumb: { width: 56, height: 56, borderRadius: 12 },
   claimTitle: { fontFamily: 'Inter_500Medium', fontSize: 13 },
   claimAmount: { fontFamily: 'Georgia', fontSize: 18, lineHeight: 23, marginTop: 3 },
   reviewButton: { minHeight: 34, borderWidth: 1, borderRadius: 17, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
