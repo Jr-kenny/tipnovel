@@ -1,31 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
-import { randomBytes } from 'node:crypto';
-
-function dataDir(): string {
-  const configured = process.env.CLAIMS_DATA_DIR?.trim();
-  if (configured) return configured;
-  if (process.env.VERCEL) return '/tmp/tipnovel-claims';
-  return path.resolve(process.cwd(), 'data-claims');
+function readEnv(key: string): string | null {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  const value = env?.[key]?.trim();
+  return value || null;
 }
 
 export function getAdminKey(): string | null {
-  const configured = process.env.ADMIN_KEY?.trim();
-  if (configured) return configured;
-  if (process.env.VERCEL) return null;
-  try {
-    const file = path.join(dataDir(), '.admin-key');
-    if (existsSync(file)) {
-      const saved = readFileSync(file, 'utf8').trim();
-      if (saved) return saved;
-    }
-    const fresh = randomBytes(24).toString('hex');
-    mkdirSync(dataDir(), { recursive: true });
-    writeFileSync(file, fresh);
-    return fresh;
-  } catch {
-    return null;
-  }
+  return readEnv('ADMIN_KEY');
 }
 
 export function checkAdminKey(value: unknown): boolean {

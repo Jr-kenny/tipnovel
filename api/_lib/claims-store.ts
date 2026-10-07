@@ -1,4 +1,18 @@
-import { randomBytes } from 'node:crypto';
+function readEnv(key: string): string | null {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  const value = env?.[key]?.trim();
+  return value || null;
+}
+
+function rid(prefix: string, bytes = 12): string {
+  let hex = '';
+  while (hex.length < bytes * 2) {
+    hex += Math.floor(Math.random() * 0xffffffff)
+      .toString(16)
+      .padStart(8, '0');
+  }
+  return `${prefix}_${hex.slice(0, bytes * 2)}`;
+}
 
 export type StoredEvidence = {
   name: string;
@@ -70,8 +84,8 @@ type Row = {
 };
 
 function config(): { url: string; key: string } {
-  const url = process.env.SUPABASE_URL?.trim();
-  const key = process.env.SUPABASE_SERVICE_KEY?.trim();
+  const url = readEnv('SUPABASE_URL');
+  const key = readEnv('SUPABASE_SERVICE_KEY');
   if (!url || !key) throw new Error('Claim storage is not configured.');
   return { url, key };
 }
@@ -168,10 +182,6 @@ export async function readEvidenceBytes(pathname: string): Promise<{ data: Uint8
   } catch {
     return null;
   }
-}
-
-function rid(prefix: string, bytes = 12): string {
-  return `${prefix}_${randomBytes(bytes).toString('hex')}`;
 }
 
 function isHexAddress(value: unknown): value is string {
