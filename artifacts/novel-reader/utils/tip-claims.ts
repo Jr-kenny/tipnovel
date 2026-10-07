@@ -31,7 +31,7 @@ export type ClaimDetailToken = {
   token: string;
   claimId: string;
   authorName: string;
-  questions: string[];
+  questions: Array<{ id: string; text: string }>;
   status: ClaimStatus;
 };
 
