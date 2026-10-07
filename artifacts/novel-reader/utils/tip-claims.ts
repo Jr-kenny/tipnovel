@@ -4,7 +4,10 @@ export type ClaimRequest = {
   id: string;
   authorName: string;
   authorId: `0x${string}`;
-  code: string;
+  originPlatform: string;
+  originUsername: string;
+  originUrl: string;
+  evidenceUri: string;
   payoutWallet: string;
   balanceAtSubmit: string;
   status: 'pending' | 'approved';
