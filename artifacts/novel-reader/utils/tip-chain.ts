@@ -1,9 +1,9 @@
 import { keccak256, stringToHex } from 'viem';
-import { arcTestnet } from 'viem/chains';
+import { arc } from 'viem/chains';
 
-export const ARC = arcTestnet;
-export const ARC_RPC_URL = 'https://rpc.testnet.arc.io';
-export const ARC_EXPLORER_URL = 'https://testnet.arcscan.app';
+export const ARC = arc;
+export const ARC_RPC_URL = 'https://rpc.mainnet.arc.io';
+export const ARC_EXPLORER_URL = 'https://explorer.arc.io';
 
 export const USDC_ADDRESS = '0x3600000000000000000000000000000000000000' as const;
 export const USDC_DECIMALS = 6;
