@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatUnits, isAddress, type Address } from 'viem';
 import { SubscreenHeader } from '@/components/SubscreenHeader';
@@ -45,7 +46,10 @@ export default function ClaimScreen() {
   const [stats, setStats] = useState<AuthorStats | null>(null);
   const [lookupBusy, setLookupBusy] = useState(false);
   const [lookupFailed, setLookupFailed] = useState(false);
-  const [proofCode, setProofCode] = useState('');
+  const [originPlatform, setOriginPlatform] = useState('');
+  const [originUsername, setOriginUsername] = useState('');
+  const [originUrl, setOriginUrl] = useState('');
+  const [evidenceUri, setEvidenceUri] = useState<string | null>(null);
   const [payoutWallet, setPayoutWallet] = useState('');
   const [submitBusy, setSubmitBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -88,8 +92,16 @@ export default function ClaimScreen() {
 
   const handleSubmit = async () => {
     if (!checkedName || !checkedAuthorId || !stats) return;
-    if (!proofCode.trim()) {
-      setSubmitError('Add the one-time code from your bio or dashboard.');
+    if (!originPlatform.trim()) {
+      setSubmitError('Name the place the novel was first uploaded.');
+      return;
+    }
+    if (!originUsername.trim()) {
+      setSubmitError('Add your username on that platform.');
+      return;
+    }
+    if (!evidenceUri) {
+      setSubmitError('Attach a dashboard screenshot showing the title, date, and username.');
       return;
     }
     if (!isAddress(payoutWallet.trim())) {
@@ -102,18 +114,37 @@ export default function ClaimScreen() {
       await saveClaim({
         authorName: checkedName,
         authorId: checkedAuthorId,
-        code: proofCode.trim(),
+        originPlatform: originPlatform.trim(),
+        originUsername: originUsername.trim(),
+        originUrl: originUrl.trim(),
+        evidenceUri,
         payoutWallet: payoutWallet.trim(),
         balanceAtSubmit: formatUnits(stats.balance, USDC_DECIMALS),
       });
       await refreshClaims();
-      setProofCode('');
+      setOriginPlatform('');
+      setOriginUsername('');
+      setOriginUrl('');
+      setEvidenceUri(null);
       setPayoutWallet('');
       setSubmitted(true);
     } catch {
       setSubmitError('The claim could not be saved. Try again.');
     } finally {
       setSubmitBusy(false);
+    }
+  };
+
+  const pickEvidence = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+      if (!result.canceled) {
+        setEvidenceUri(result.assets[0]?.uri ?? null);
+        setSubmitError(null);
+        setSubmitted(false);
+      }
+    } catch {
+      setSubmitError('The photo library could not be opened. Try again.');
     }
   };
 
@@ -240,22 +271,66 @@ export default function ClaimScreen() {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.cardTitle, { color: colors.foreground }]}>Prove authorship</Text>
               <Text style={[styles.note, { color: colors.mutedForeground }]}>
-                Place the one-time code in your original bio or dashboard, then paste it below with your payout wallet.
+                Show where the novel was first uploaded: the platform, your username there, and a dashboard
+                screenshot with the title, date, and username visible. A person reviews every claim.
               </Text>
               <TextInput
-                accessibilityLabel="One-time code"
-                autoCapitalize="none"
-                autoCorrect={false}
+                accessibilityLabel="Original platform"
+                autoCapitalize="words"
                 onChangeText={(value) => {
-                  setProofCode(value);
+                  setOriginPlatform(value);
                   setSubmitError(null);
                   setSubmitted(false);
                 }}
-                placeholder="One-time code"
+                placeholder="First uploaded on (Royal Road, Wattpad, …)"
                 placeholderTextColor={colors.mutedForeground}
                 style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
-                value={proofCode}
+                value={originPlatform}
               />
+              <TextInput
+                accessibilityLabel="Username on the original platform"
+                autoCapitalize="none"
+                autoCorrect={false}
+                onChangeText={(value) => {
+                  setOriginUsername(value);
+                  setSubmitError(null);
+                  setSubmitted(false);
+                }}
+                placeholder="Your username there"
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+                value={originUsername}
+              />
+              <TextInput
+                accessibilityLabel="Link to the original novel page"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                onChangeText={(value) => {
+                  setOriginUrl(value);
+                  setSubmitError(null);
+                  setSubmitted(false);
+                }}
+                placeholder="Link to the original page (optional)"
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+                value={originUrl}
+              />
+              <View style={styles.evidenceRow}>
+                {evidenceUri ? (
+                  <Image accessibilityLabel="Dashboard evidence" source={{ uri: evidenceUri }} style={styles.evidenceThumb} />
+                ) : null}
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void pickEvidence()}
+                  style={[styles.evidenceButton, { borderColor: colors.border }]}
+                >
+                  <Feather name="upload" size={15} color={colors.primary} />
+                  <Text style={[styles.evidenceButtonText, { color: colors.foreground }]}>
+                    {evidenceUri ? 'Change screenshot' : 'Attach dashboard screenshot'}
+                  </Text>
+                </Pressable>
+              </View>
               <TextInput
                 accessibilityLabel="Payout wallet"
                 autoCapitalize="none"
@@ -395,4 +470,8 @@ const styles = StyleSheet.create({
   claimAmount: { fontFamily: 'Georgia', fontSize: 18, lineHeight: 23, marginTop: 3 },
   reviewButton: { minHeight: 34, borderWidth: 1, borderRadius: 17, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   reviewText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  evidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
+  evidenceThumb: { width: 64, height: 64, borderRadius: 12 },
+  evidenceButton: { flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  evidenceButtonText: { fontFamily: 'Inter_500Medium', fontSize: 12 },
 });
