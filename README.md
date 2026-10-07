@@ -26,6 +26,15 @@ are, and tips wait safely until they claim them.
    withdraws. Unclaimed tips stay visibly locked under a "waiting for the
    author" status — never spent, never hidden.
 
+## Why Arc
+
+Tipping only works if sending fifty cents costs a fraction of a cent and
+confirms before the reader looks away. Arc is built for exactly that: gas is
+paid in USDC itself, so readers hold one asset — no volatile gas token to buy
+or explain. Fees are flat and predictable, settlement is final in under a
+second, and the chain is EVM-compatible, so the tipping vault is a plain
+Solidity contract holding real dollars, not points.
+
 ## Product focus
 
 - Discover novels through the built-in catalogue.
