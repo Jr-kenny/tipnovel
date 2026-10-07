@@ -1,7 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { del, list, put } from '@vercel/blob';
 
 export type StoredEvidence = {
   name: string;
@@ -49,97 +46,125 @@ export type ServerClaim = {
 };
 
 const MAX_EVIDENCE_ITEMS = 10;
-const MAX_PAYLOAD_BYTES = 6_000_000;
+const EVIDENCE_BUCKET = 'claim-evidence';
 
-function blobToken(): string | null {
-  return process.env.BLOB_READ_WRITE_TOKEN?.trim() || null;
+type Row = {
+  id: string;
+  author_name: string;
+  author_id: string;
+  origin_platform: string;
+  origin_username: string;
+  origin_url: string;
+  evidence: StoredEvidence[];
+  message: string;
+  email: string;
+  payout_wallet: string;
+  balance_at_submit: string;
+  status: ClaimStatus;
+  questions: StoredQuestion[];
+  followups: StoredFollowup[];
+  detail_tokens: Array<{ token: string; createdAt: number }>;
+  approve_tx: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function config(): { url: string; key: string } {
+  const url = process.env.SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SERVICE_KEY?.trim();
+  if (!url || !key) throw new Error('Claim storage is not configured.');
+  return { url, key };
 }
 
-function dataDir(): string {
-  const configured = process.env.CLAIMS_DATA_DIR?.trim();
-  if (configured) return configured;
-  if (process.env.VERCEL) return '/tmp/tipnovel-claims';
-  return path.resolve(process.cwd(), 'data-claims');
+function toClaim(row: Row): ServerClaim {
+  return {
+    id: row.id,
+    authorName: row.author_name,
+    authorId: row.author_id,
+    originPlatform: row.origin_platform,
+    originUsername: row.origin_username,
+    originUrl: row.origin_url,
+    evidence: row.evidence ?? [],
+    message: row.message,
+    email: row.email,
+    payoutWallet: row.payout_wallet,
+    balanceAtSubmit: row.balance_at_submit,
+    status: row.status,
+    questions: row.questions ?? [],
+    followups: row.followups ?? [],
+    detailTokens: row.detail_tokens ?? [],
+    approveTx: row.approve_tx,
+    createdAt: Date.parse(row.created_at),
+    updatedAt: Date.parse(row.updated_at),
+  };
 }
 
-function filePath(): string {
-  return path.join(dataDir(), 'claims.json');
-}
-
-function readAllFiles(): ServerClaim[] {
-  try {
-    const raw = readFileSync(filePath(), 'utf8');
-    const parsed = JSON.parse(raw) as ServerClaim[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeAllFiles(claims: ServerClaim[]): void {
-  mkdirSync(dataDir(), { recursive: true });
-  writeFileSync(filePath(), JSON.stringify(claims));
-}
-
-async function readAllBlob(token: string): Promise<ServerClaim[]> {
-  const found = await list({ prefix: 'claims/', token });
-  const records = await Promise.all(
-    found.blobs
-      .filter((blob) => blob.pathname.endsWith('.json'))
-      .map(async (blob) => {
-        const response = await fetch(blob.url, { headers: { Authorization: `Bearer ${token}` } });
-        if (!response.ok) return null;
-        try {
-          return (await response.json()) as ServerClaim;
-        } catch {
-          return null;
-        }
-      }),
-  );
-  return records
-    .filter((record): record is ServerClaim => Boolean(record && record.id))
-    .sort((left, right) => right.createdAt - left.createdAt);
-}
-
-async function writeOneBlob(claim: ServerClaim, token: string): Promise<void> {
-  await put(`claims/${claim.id}.json`, JSON.stringify(claim), {
-    access: 'private',
-    token,
-    addRandomSuffix: false,
-    contentType: 'application/json',
+async function request(pathname: string, init: RequestInit & { query?: string }): Promise<Response> {
+  const { url, key } = config();
+  return fetch(`${url}${pathname}${init.query ?? ''}`, {
+    ...init,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      ...(init.headers ?? {}),
+    },
   });
 }
 
-async function deleteOneBlob(pathname: string, token: string): Promise<void> {
-  const found = await list({ prefix: pathname, limit: 1, token });
-  const url = found.blobs.find((blob) => blob.pathname === pathname)?.url;
-  if (url) await del(url, { token });
+async function readJson<T>(response: Response, trouble: string): Promise<T> {
+  if (!response.ok) throw new Error(trouble);
+  return (await response.json()) as T;
+}
+
+async function updateRow(id: string, patch: Partial<Row>): Promise<ServerClaim> {
+  const response = await request('/rest/v1/claims', {
+    method: 'PATCH',
+    query: `?id=eq.${encodeURIComponent(id)}`,
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
+  });
+  const rows = await readJson<Row[]>(response, 'The review could not be saved.');
+  const row = rows[0];
+  if (!row) throw new Error('Claim not found.');
+  return toClaim(row);
+}
+
+async function storeEvidenceBytes(claimId: string, index: number, dataUrl: string): Promise<StoredEvidence> {
+  const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(dataUrl);
+  if (!match) throw new Error('Screenshots must be images.');
+  const { url, key } = config();
+  const name = `evidence-${index + 1}.jpg`;
+  const pathname = `${claimId}/${name}`;
+  const upload = await fetch(`${url}/storage/v1/object/${EVIDENCE_BUCKET}/${pathname}`, {
+    method: 'POST',
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      'Content-Type': match[1],
+      'x-upsert': 'true',
+    },
+    body: Buffer.from(match[2], 'base64'),
+  });
+  if (!upload.ok) throw new Error('Screenshots could not be stored. Try again.');
+  return { name, path: pathname };
 }
 
 export async function readEvidenceBytes(pathname: string): Promise<{ data: Buffer; contentType: string } | null> {
-  const token = blobToken();
-  if (!token) return null;
-  const found = await list({ prefix: pathname, limit: 1, token });
-  const blob = found.blobs.find((entry) => entry.pathname === pathname);
-  if (!blob) return null;
-  const response = await fetch(blob.url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) return null;
-  return { data: Buffer.from(await response.arrayBuffer()), contentType: blob.contentType || 'image/jpeg' };
-}
-
-async function storeEvidenceBytes(claimId: string, index: number, dataUrl: string, token: string | null): Promise<StoredEvidence> {
-  const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(dataUrl);
-  if (!match) throw new Error('Screenshots must be images.');
-  const name = `evidence-${index + 1}.jpg`;
-  if (!token) return { name, path: dataUrl };
-  const pathname = `claims/${claimId}/${name}`;
-  await put(pathname, Buffer.from(match[2], 'base64'), {
-    access: 'private',
-    token,
-    addRandomSuffix: false,
-    contentType: match[1],
-  });
-  return { name, path: pathname };
+  if (!pathname || pathname.includes('..')) return null;
+  try {
+    const { url, key } = config();
+    const response = await fetch(`${url}/storage/v1/object/${EVIDENCE_BUCKET}/${pathname}`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!response.ok) return null;
+    return {
+      data: Buffer.from(await response.arrayBuffer()),
+      contentType: response.headers.get('content-type') || 'image/jpeg',
+    };
+  } catch {
+    return null;
+  }
 }
 
 function rid(prefix: string, bytes = 12): string {
@@ -171,25 +196,6 @@ function cleanInputEvidence(value: unknown): InputEvidence[] | null {
   return items;
 }
 
-async function persistClaim(claim: ServerClaim): Promise<void> {
-  const token = blobToken();
-  if (token) {
-    await writeOneBlob(claim, token);
-    return;
-  }
-  const claims = readAllFiles();
-  const index = claims.findIndex((entry) => entry.id === claim.id);
-  if (index >= 0) claims[index] = claim;
-  else claims.unshift(claim);
-  writeAllFiles(claims);
-}
-
-async function loadRecords(): Promise<ServerClaim[]> {
-  const token = blobToken();
-  if (token) return readAllBlob(token);
-  return readAllFiles();
-}
-
 export function publicClaim(claim: ServerClaim): Omit<ServerClaim, 'email'> {
   const { email: _email, ...rest } = claim;
   return rest;
@@ -208,56 +214,58 @@ export async function createClaim(input: Record<string, unknown>): Promise<Serve
   if (!isEmail(input.email)) throw new Error('Add an email where the review outcome can reach you.');
   if (!isHexAddress(input.payoutWallet)) throw new Error('That payout wallet address does not look right.');
 
-  const token = blobToken();
-  const now = Date.now();
+  const now = new Date().toISOString();
   const id = rid('c');
   const evidence: StoredEvidence[] = [];
   for (const [index, item] of uploads.entries()) {
-    evidence.push(await storeEvidenceBytes(id, index, item.dataUrl, token));
+    evidence.push(await storeEvidenceBytes(id, index, item.dataUrl));
   }
 
-  const claim: ServerClaim = {
-    id,
-    authorName,
-    authorId: input.authorId,
-    originPlatform,
-    originUsername,
-    originUrl: typeof input.originUrl === 'string' ? input.originUrl.trim().slice(0, 500) : '',
-    evidence,
-    message: typeof input.message === 'string' ? input.message.trim().slice(0, 2000) : '',
-    email: (input.email as string).trim(),
-    payoutWallet: input.payoutWallet as string,
-    balanceAtSubmit: typeof input.balanceAtSubmit === 'string' ? input.balanceAtSubmit.slice(0, 40) : '0',
-    status: 'pending',
-    questions: [],
-    followups: [],
-    detailTokens: [],
-    approveTx: null,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  if (!token && JSON.stringify(claim).length > MAX_PAYLOAD_BYTES) {
-    throw new Error('Those screenshots are too large together. Remove a few and try again.');
-  }
-
-  await persistClaim(claim);
-  return claim;
+  const response = await request('/rest/v1/claims', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({
+      id,
+      author_name: authorName,
+      author_id: input.authorId,
+      origin_platform: originPlatform,
+      origin_username: originUsername,
+      origin_url: typeof input.originUrl === 'string' ? input.originUrl.trim().slice(0, 500) : '',
+      evidence,
+      message: typeof input.message === 'string' ? input.message.trim().slice(0, 2000) : '',
+      email: (input.email as string).trim(),
+      payout_wallet: input.payoutWallet as string,
+      balance_at_submit: typeof input.balanceAtSubmit === 'string' ? input.balanceAtSubmit.slice(0, 40) : '0',
+      status: 'pending',
+    }),
+  });
+  const rows = await readJson<Row[]>(response, 'The claim could not be sent. Try again.');
+  if (!rows[0]) throw new Error('The claim could not be sent. Try again.');
+  return toClaim(rows[0]);
 }
 
 export async function listClaims(): Promise<ServerClaim[]> {
-  return loadRecords();
+  const response = await request('/rest/v1/claims', {
+    method: 'GET',
+    query: '?select=*&order=created_at.desc',
+  });
+  const rows = await readJson<Row[]>(response, 'The queue could not be loaded.');
+  return rows.map(toClaim);
 }
 
 export async function getClaim(id: string): Promise<ServerClaim | null> {
-  const records = await loadRecords();
-  return records.find((claim) => claim.id === id) ?? null;
+  const response = await request('/rest/v1/claims', {
+    method: 'GET',
+    query: `?id=eq.${encodeURIComponent(id)}&select=*`,
+  });
+  const rows = await readJson<Row[]>(response, 'The claim could not be loaded.');
+  return rows[0] ? toClaim(rows[0]) : null;
 }
 
 export async function getClaimByToken(token: string): Promise<{ claim: ServerClaim; tokenIssuedAt: number } | null> {
   if (typeof token !== 'string' || !token) return null;
-  const records = await loadRecords();
-  const claim = records.find((entry) => entry.detailTokens.some((entry2) => entry2.token === token));
+  const claims = await listClaims();
+  const claim = claims.find((entry) => entry.detailTokens.some((entry2) => entry2.token === token));
   if (!claim) return null;
   const record = claim.detailTokens.find((entry) => entry.token === token);
   return { claim, tokenIssuedAt: record?.createdAt ?? claim.updatedAt };
@@ -274,18 +282,17 @@ export async function addFollowup(token: string, message: string, evidence: unkn
   if (!text && cleaned.length === 0 && uploads.length === 0) throw new Error('Write a reply or attach screenshots.');
   if (uploads.length > 0 && cleaned.length === 0) throw new Error('Those screenshots could not be read.');
 
-  const blob = blobToken();
   const claim = found.claim;
   const stored: StoredEvidence[] = [];
   const base = claim.evidence.length + claim.followups.reduce((count, entry) => count + entry.evidence.length, 0);
   for (const [index, item] of cleaned.entries()) {
-    stored.push(await storeEvidenceBytes(claim.id, base + index, item.dataUrl, blob));
+    stored.push(await storeEvidenceBytes(claim.id, base + index, item.dataUrl));
   }
-  claim.followups.push({ message: text, evidence: stored, createdAt: Date.now() });
-  claim.status = 'pending';
-  claim.updatedAt = Date.now();
-  await persistClaim(claim);
-  return claim;
+  const followups = [...claim.followups, { message: text, evidence: stored, createdAt: Date.now() }];
+  return updateRow(claim.id, {
+    followups,
+    status: 'pending',
+  } as Partial<Row>);
 }
 
 export async function requestDetails(id: string, questions: unknown): Promise<{ token: string }> {
@@ -299,24 +306,20 @@ export async function requestDetails(id: string, questions: unknown): Promise<{ 
   if (!claim) throw new Error('Claim not found.');
   const token = rid('t', 24);
   const now = Date.now();
-  for (const text of items) {
-    claim.questions.push({ id: rid('q', 8), text, createdAt: now });
-  }
-  claim.detailTokens.push({ token, createdAt: now });
-  claim.status = 'more-info';
-  claim.updatedAt = now;
-  await persistClaim(claim);
+  const updated: ServerClaim = {
+    ...claim,
+    questions: [...claim.questions, ...items.map((text) => ({ id: rid('q', 8), text, createdAt: now }))],
+    detailTokens: [...claim.detailTokens, { token, createdAt: now }],
+    status: 'more-info',
+  };
+  await updateRow(id, {
+    questions: updated.questions,
+    detail_tokens: updated.detailTokens,
+    status: 'more-info',
+  } as Partial<Row>);
   return { token };
 }
 
 export async function setClaimStatus(id: string, status: ClaimStatus, approveTx: string | null): Promise<ServerClaim> {
-  const claim = await getClaim(id);
-  if (!claim) throw new Error('Claim not found.');
-  claim.status = status;
-  if (approveTx) claim.approveTx = approveTx;
-  claim.updatedAt = Date.now();
-  await persistClaim(claim);
-  return claim;
+  return updateRow(id, { status, approve_tx: approveTx });
 }
-
-export { deleteOneBlob };
