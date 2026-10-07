@@ -49,7 +49,8 @@ export default function ClaimScreen() {
   const [originPlatform, setOriginPlatform] = useState('');
   const [originUsername, setOriginUsername] = useState('');
   const [originUrl, setOriginUrl] = useState('');
-  const [evidenceUri, setEvidenceUri] = useState<string | null>(null);
+  const [evidenceUris, setEvidenceUris] = useState<string[]>([]);
+  const [message, setMessage] = useState('');
   const [payoutWallet, setPayoutWallet] = useState('');
   const [submitBusy, setSubmitBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -100,8 +101,8 @@ export default function ClaimScreen() {
       setSubmitError('Add your username on that platform.');
       return;
     }
-    if (!evidenceUri) {
-      setSubmitError('Attach a dashboard screenshot showing the title, date, and username.');
+    if (!evidenceUris.length) {
+      setSubmitError('Attach at least one dashboard screenshot showing the title, date, and username.');
       return;
     }
     if (!isAddress(payoutWallet.trim())) {
@@ -117,7 +118,8 @@ export default function ClaimScreen() {
         originPlatform: originPlatform.trim(),
         originUsername: originUsername.trim(),
         originUrl: originUrl.trim(),
-        evidenceUri,
+        evidenceUris,
+        message: message.trim(),
         payoutWallet: payoutWallet.trim(),
         balanceAtSubmit: formatUnits(stats.balance, USDC_DECIMALS),
       });
@@ -125,7 +127,8 @@ export default function ClaimScreen() {
       setOriginPlatform('');
       setOriginUsername('');
       setOriginUrl('');
-      setEvidenceUri(null);
+      setEvidenceUris([]);
+      setMessage('');
       setPayoutWallet('');
       setSubmitted(true);
     } catch {
@@ -136,16 +139,25 @@ export default function ClaimScreen() {
   };
 
   const pickEvidence = async () => {
+    if (evidenceUris.length >= 10) return;
     try {
       const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
       if (!result.canceled) {
-        setEvidenceUri(result.assets[0]?.uri ?? null);
-        setSubmitError(null);
-        setSubmitted(false);
+        const uri = result.assets[0]?.uri;
+        if (uri) {
+          setEvidenceUris((current) => (current.length >= 10 ? current : [...current, uri]));
+          setSubmitError(null);
+          setSubmitted(false);
+        }
       }
     } catch {
       setSubmitError('The photo library could not be opened. Try again.');
     }
+  };
+
+  const removeEvidence = (uri: string) => {
+    setEvidenceUris((current) => current.filter((item) => item !== uri));
+    setSubmitted(false);
   };
 
   const handleApprove = async (claim: ClaimRequest) => {
@@ -316,21 +328,48 @@ export default function ClaimScreen() {
                 style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
                 value={originUrl}
               />
-              <View style={styles.evidenceRow}>
-                {evidenceUri ? (
-                  <Image accessibilityLabel="Dashboard evidence" source={{ uri: evidenceUri }} style={styles.evidenceThumb} />
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>DASHBOARD SCREENSHOTS · {evidenceUris.length}/10</Text>
+              <View style={styles.evidenceGrid}>
+                {evidenceUris.map((uri) => (
+                  <View key={uri} style={styles.evidenceCell}>
+                    <Image accessibilityLabel="Dashboard evidence" source={{ uri }} style={styles.evidenceThumb} />
+                    <Pressable
+                      accessibilityLabel="Remove screenshot"
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => removeEvidence(uri)}
+                      style={[styles.evidenceRemove, { backgroundColor: colors.background, borderColor: colors.border }]}
+                    >
+                      <Feather name="x" size={12} color={colors.foreground} />
+                    </Pressable>
+                  </View>
+                ))}
+                {evidenceUris.length < 10 ? (
+                  <Pressable
+                    accessibilityLabel="Attach dashboard screenshots"
+                    accessibilityRole="button"
+                    onPress={() => void pickEvidence()}
+                    style={[styles.evidenceAdd, { borderColor: colors.border, backgroundColor: colors.background }]}
+                  >
+                    <Feather name="plus" size={18} color={colors.primary} />
+                    <Text style={[styles.evidenceAddText, { color: colors.mutedForeground }]}>Add</Text>
+                  </Pressable>
                 ) : null}
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => void pickEvidence()}
-                  style={[styles.evidenceButton, { borderColor: colors.border }]}
-                >
-                  <Feather name="upload" size={15} color={colors.primary} />
-                  <Text style={[styles.evidenceButtonText, { color: colors.foreground }]}>
-                    {evidenceUri ? 'Change screenshot' : 'Attach dashboard screenshot'}
-                  </Text>
-                </Pressable>
               </View>
+              <TextInput
+                accessibilityLabel="Anything that helps the review"
+                multiline
+                onChangeText={(value) => {
+                  setMessage(value);
+                  setSubmitError(null);
+                  setSubmitted(false);
+                }}
+                placeholder="Anything that helps the review (pen names, moved platforms, co-authors…)"
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.input, styles.messageInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+                textAlignVertical="top"
+                value={message}
+              />
               <TextInput
                 accessibilityLabel="Payout wallet"
                 autoCapitalize="none"
@@ -405,8 +444,8 @@ export default function ClaimScreen() {
               <Text style={[styles.cardTitle, { color: colors.foreground }]}>Claims on this device</Text>
               {claims.map((claim) => (
                 <View key={claim.id} style={[styles.claim, { borderColor: colors.border }]}>
-                  {claim.evidenceUri ? (
-                    <Image accessibilityLabel="Claim evidence" source={{ uri: claim.evidenceUri }} style={styles.claimThumb} />
+                  {claim.evidenceUris[0] ? (
+                    <Image accessibilityLabel="Claim evidence" source={{ uri: claim.evidenceUris[0] }} style={styles.claimThumb} />
                   ) : null}
                   <View style={styles.claimCopy}>
                     <Text style={[styles.claimTitle, { color: colors.foreground }]}>{claim.authorName}</Text>
@@ -416,7 +455,13 @@ export default function ClaimScreen() {
                     </Text>
                     <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>
                       {claim.originPlatform} · {claim.originUsername}
+                      {claim.evidenceUris.length > 1 ? ` · ${claim.evidenceUris.length} screenshots` : ''}
                     </Text>
+                    {claim.message ? (
+                      <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]} numberOfLines={2}>
+                        “{claim.message}”
+                      </Text>
+                    ) : null}
                     <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>
                       {claim.status === 'approved' ? 'Approved' : 'Under review'}
                     </Text>
@@ -477,8 +522,12 @@ const styles = StyleSheet.create({
   claimAmount: { fontFamily: 'Georgia', fontSize: 18, lineHeight: 23, marginTop: 3 },
   reviewButton: { minHeight: 34, borderWidth: 1, borderRadius: 17, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   reviewText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
-  evidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
+  evidenceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  evidenceCell: { position: 'relative' },
   evidenceThumb: { width: 64, height: 64, borderRadius: 12 },
-  evidenceButton: { flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  evidenceButtonText: { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  evidenceRemove: { position: 'absolute', top: -7, right: -7, width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  evidenceAdd: { width: 64, height: 64, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  evidenceAddText: { fontFamily: 'Inter_500Medium', fontSize: 10 },
+  fieldLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 9, letterSpacing: 1.2, marginTop: 14 },
+  messageInput: { minHeight: 76, paddingTop: 12, paddingBottom: 12, fontSize: 12, lineHeight: 18 },
 });
