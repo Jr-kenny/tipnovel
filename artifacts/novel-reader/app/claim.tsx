@@ -1,14 +1,14 @@
 import { Feather } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { formatUnits, isAddress, type Address } from 'viem';
+import { formatUnits, isAddress } from 'viem';
 import { SubscreenHeader } from '@/components/SubscreenHeader';
 import { useColors } from '@/hooks/useColors';
 import { isValidEmail } from '@/utils/email';
 import {
-  OWNER_ADDRESS,
   USDC_DECIMALS,
   authorIdFor,
   explorerTxUrl,
@@ -22,12 +22,11 @@ import {
   readAuthorStats,
   restoreWalletSession,
   subscribeWalletSession,
-  verifyAuthor,
   withdrawTips,
   type AuthorStats,
   type WalletSession,
 } from '@/utils/tip-wallet';
-import { loadClaims, markClaimApproved, saveClaim, type ClaimRequest } from '@/utils/tip-claims';
+import { submitClaim } from '@/utils/tip-claims';
 
 function plainError(error: unknown): string {
   if (error instanceof TipError) return error.message;
@@ -57,23 +56,15 @@ export default function ClaimScreen() {
   const [submitBusy, setSubmitBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [claims, setClaims] = useState<ClaimRequest[]>([]);
-  const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
-  const [reviewError, setReviewError] = useState<string | null>(null);
   const [connected, setConnected] = useState<WalletSession | null>(() => getWalletSession());
   const [withdrawBusy, setWithdrawBusy] = useState(false);
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [withdrawTx, setWithdrawTx] = useState<string | null>(null);
 
-  const refreshClaims = useCallback(async () => {
-    setClaims(await loadClaims());
-  }, []);
-
   useEffect(() => {
-    void refreshClaims();
     void restoreWalletSession().catch(() => {});
     return subscribeWalletSession(() => setConnected(getWalletSession()));
-  }, [refreshClaims]);
+  }, []);
 
   const checkedName = usableAuthorName(authorName);
   const checkedAuthorId = checkedName ? authorIdFor(checkedName) : null;
@@ -118,19 +109,30 @@ export default function ClaimScreen() {
     setSubmitBusy(true);
     setSubmitError(null);
     try {
-      await saveClaim({
+      const evidence = [];
+      let payloadBytes = 0;
+      for (const [index, uri] of evidenceUris.entries()) {
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+        payloadBytes += base64.length;
+        if (payloadBytes > 4_000_000) {
+          setSubmitError('Those screenshots are too large together. Remove a few and try again.');
+          setSubmitBusy(false);
+          return;
+        }
+        evidence.push({ name: `evidence-${index + 1}.jpg`, dataUrl: `data:image/jpeg;base64,${base64}` });
+      }
+      await submitClaim({
         authorName: checkedName,
         authorId: checkedAuthorId,
         originPlatform: originPlatform.trim(),
         originUsername: originUsername.trim(),
         originUrl: originUrl.trim(),
-        evidenceUris,
+        evidence,
         message: message.trim(),
         email: email.trim(),
         payoutWallet: payoutWallet.trim(),
         balanceAtSubmit: formatUnits(stats.balance, USDC_DECIMALS),
       });
-      await refreshClaims();
       setOriginPlatform('');
       setOriginUsername('');
       setOriginUrl('');
@@ -138,9 +140,11 @@ export default function ClaimScreen() {
       setMessage('');
       setEmail('');
       setPayoutWallet('');
+      setAuthorName('');
+      setStats(null);
       setSubmitted(true);
-    } catch {
-      setSubmitError('The claim could not be saved. Try again.');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'The claim could not be sent. Try again.');
     } finally {
       setSubmitBusy(false);
     }
@@ -166,42 +170,6 @@ export default function ClaimScreen() {
   const removeEvidence = (uri: string) => {
     setEvidenceUris((current) => current.filter((item) => item !== uri));
     setSubmitted(false);
-  };
-
-  const handleApprove = async (claim: ClaimRequest) => {
-    if (!OWNER_ADDRESS) {
-      setReviewError('Review opens once the owner wallet is configured.');
-      return;
-    }
-    setReviewBusyId(claim.id);
-    setReviewError(null);
-    try {
-      const existing = getWalletSession() ?? (await connectWallet().catch(() => null));
-      if (!existing) throw new TipError('no-wallet', 'Connect the owner wallet to review claims.');
-      if (existing.address.toLowerCase() !== OWNER_ADDRESS.toLowerCase()) {
-        throw new TipError('wrong-network', 'Connect the owner wallet to review claims.');
-      }
-      await ensureArcNetwork();
-      await verifyAuthor(claim.authorId, claim.payoutWallet as Address);
-      await markClaimApproved(claim.id);
-      await refreshClaims();
-    } catch (error) {
-      setReviewError(plainError(error));
-    } finally {
-      setReviewBusyId(null);
-    }
-  };
-
-  const notifyAuthor = (claim: ClaimRequest) => {
-    if (!claim.email) return;
-    const subject = `Your TipNovel claim passed review`;
-    const body = [
-      `Good news — your claim for ${claim.authorName} passed review.`,
-      '',
-      `${claim.balanceAtSubmit} USDC is waiting for ${claim.payoutWallet}.`,
-      'Open TipNovel → Claim author tips, connect that wallet, and withdraw.',
-    ].join('\n');
-    void Linking.openURL(`mailto:${claim.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
   const handleWithdraw = async () => {
@@ -474,64 +442,21 @@ export default function ClaimScreen() {
             </View>
           ) : null}
 
-          {claims.length > 0 ? (
+          {submitted ? (
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.cardTitle, { color: colors.foreground }]}>Claims on this device</Text>
-              {claims.map((claim) => (
-                <View key={claim.id} style={[styles.claim, { borderColor: colors.border }]}>
-                  {claim.evidenceUris[0] ? (
-                    <Image accessibilityLabel="Claim evidence" source={{ uri: claim.evidenceUris[0] }} style={styles.claimThumb} />
-                  ) : null}
-                  <View style={styles.claimCopy}>
-                    <Text style={[styles.claimTitle, { color: colors.foreground }]}>{claim.authorName}</Text>
-                    <Text style={[styles.claimAmount, { color: colors.foreground }]}>
-                      {claim.balanceAtSubmit}
-                      <Text style={[styles.statUnit, { color: colors.mutedForeground }]}> USDC</Text>
-                    </Text>
-                    <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>
-                      {claim.originPlatform} · {claim.originUsername}
-                      {claim.evidenceUris.length > 1 ? ` · ${claim.evidenceUris.length} screenshots` : ''}
-                    </Text>
-                    {claim.email ? (
-                      <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>{claim.email}</Text>
-                    ) : null}
-                    {claim.message ? (
-                      <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]} numberOfLines={2}>
-                        “{claim.message}”
-                      </Text>
-                    ) : null}
-                    <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>
-                      {claim.status === 'approved' ? 'Approved' : 'Under review'}
-                    </Text>
-                  </View>
-                  {claim.status === 'pending' ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      disabled={reviewBusyId !== null}
-                      onPress={() => void handleApprove(claim)}
-                      style={[styles.reviewButton, { borderColor: colors.border, opacity: reviewBusyId !== null ? 0.5 : 1 }]}
-                    >
-                      {reviewBusyId === claim.id ? (
-                        <ActivityIndicator color={colors.primary} />
-                      ) : (
-                        <Text style={[styles.reviewText, { color: colors.foreground }]}>Review</Text>
-                      )}
-                    </Pressable>
-                  ) : claim.email ? (
-                    <Pressable
-                      accessibilityLabel={`Email ${claim.authorName} about the approval`}
-                      accessibilityRole="button"
-                      onPress={() => notifyAuthor(claim)}
-                      style={[styles.reviewButton, { borderColor: colors.border }]}
-                    >
-                      <Text style={[styles.reviewText, { color: colors.foreground }]}>Email author</Text>
-                    </Pressable>
-                  ) : (
-                    <Feather name="check-circle" size={18} color={colors.primary} />
-                  )}
-                </View>
-              ))}
-              {reviewError ? <Text style={[styles.error, { color: colors.destructive }]}>{reviewError}</Text> : null}
+              <View style={styles.statusRow}>
+                <Feather name="check-circle" size={16} color={colors.primary} />
+                <Text style={[styles.statusText, { color: colors.foreground }]}>
+                  Claim sent. A person reviews every claim, and the outcome lands in your email.
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setSubmitted(false)}
+                style={[styles.action, { backgroundColor: colors.secondary }]}
+              >
+                <Text style={[styles.actionText, { color: colors.secondaryForeground }]}>Start another claim</Text>
+              </Pressable>
             </View>
           ) : null}
         </View>
@@ -562,13 +487,6 @@ const styles = StyleSheet.create({
   lookupAction: { marginTop: 10 },
   statusRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 12 },
   statusText: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, flex: 1 },
-  claim: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  claimCopy: { flex: 1 },
-  claimThumb: { width: 56, height: 56, borderRadius: 12 },
-  claimTitle: { fontFamily: 'Inter_500Medium', fontSize: 13 },
-  claimAmount: { fontFamily: 'Georgia', fontSize: 18, lineHeight: 23, marginTop: 3 },
-  reviewButton: { minHeight: 34, borderWidth: 1, borderRadius: 17, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
-  reviewText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
   evidenceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   evidenceCell: { position: 'relative' },
   evidenceThumb: { width: 64, height: 64, borderRadius: 12 },
