@@ -12,7 +12,7 @@ type HandlerResponse = {
   status: (code: number) => HandlerResponse;
   setHeader: (name: string, value: string) => void;
   json: (body: unknown) => void;
-  send: (body: string | Buffer) => void;
+  send: (body: string | Uint8Array) => void;
 };
 
 function queryValue(request: HandlerRequest, key: string) {

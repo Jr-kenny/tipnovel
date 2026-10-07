@@ -136,6 +136,9 @@ async function storeEvidenceBytes(claimId: string, index: number, dataUrl: strin
   const { url, key } = config();
   const name = `evidence-${index + 1}.jpg`;
   const pathname = `${claimId}/${name}`;
+  const binary = atob(match[2]);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
   const upload = await fetch(`${url}/storage/v1/object/${EVIDENCE_BUCKET}/${pathname}`, {
     method: 'POST',
     headers: {
@@ -144,13 +147,13 @@ async function storeEvidenceBytes(claimId: string, index: number, dataUrl: strin
       'Content-Type': match[1],
       'x-upsert': 'true',
     },
-    body: Buffer.from(match[2], 'base64'),
+    body: bytes,
   });
   if (!upload.ok) throw new Error('Screenshots could not be stored. Try again.');
   return { name, path: pathname };
 }
 
-export async function readEvidenceBytes(pathname: string): Promise<{ data: Buffer; contentType: string } | null> {
+export async function readEvidenceBytes(pathname: string): Promise<{ data: Uint8Array; contentType: string } | null> {
   if (!pathname || pathname.includes('..')) return null;
   try {
     const { url, key } = config();
@@ -159,7 +162,7 @@ export async function readEvidenceBytes(pathname: string): Promise<{ data: Buffe
     });
     if (!response.ok) return null;
     return {
-      data: Buffer.from(await response.arrayBuffer()),
+      data: new Uint8Array(await response.arrayBuffer()),
       contentType: response.headers.get('content-type') || 'image/jpeg',
     };
   } catch {
