@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { SubscreenHeader } from '@/components/SubscreenHeader';
 import { useColors } from '@/hooks/useColors';
+import { isValidEmail } from '@/utils/email';
 
 type FeedbackCategory = 'bug' | 'idea' | 'source' | 'general';
 
@@ -17,10 +18,6 @@ const feedbackCategories: Array<{ label: string; value: FeedbackCategory; icon: 
   { label: 'Source or content', value: 'source', icon: 'book-open' },
   { label: 'General feedback', value: 'general', icon: 'message-circle' },
 ];
-
-function isValidEmail(value: string) {
-  return !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
 
 function firstText(values: unknown[]) {
   for (const value of values) {
@@ -95,7 +92,7 @@ export default function FeedbackScreen() {
       setError('Please add a little more detail so we can understand your feedback.');
       return;
     }
-    if (!isValidEmail(trimmedEmail)) {
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
       setStatus(undefined);
       setError('Please check the reply email address.');
       return;
@@ -183,7 +180,7 @@ export default function FeedbackScreen() {
           onChangeText={(value) => { setReplyEmail(value); setError(undefined); setStatus(undefined); }}
           placeholder="you@example.com"
           placeholderTextColor={colors.mutedForeground}
-          style={[styles.emailInput, { backgroundColor: colors.card, borderColor: error && !isValidEmail(replyEmail.trim()) ? colors.destructive : colors.border, color: colors.foreground }]}
+          style={[styles.emailInput, { backgroundColor: colors.card, borderColor: error && replyEmail.trim() && !isValidEmail(replyEmail.trim()) ? colors.destructive : colors.border, color: colors.foreground }]}
           value={replyEmail}
         />
 
