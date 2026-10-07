@@ -9,6 +9,7 @@ export type ClaimRequest = {
   originUrl: string;
   evidenceUris: string[];
   message: string;
+  email: string;
   payoutWallet: string;
   balanceAtSubmit: string;
   status: 'pending' | 'approved';
@@ -34,6 +35,7 @@ function normalize(raw: StoredClaim): ClaimRequest | null {
     originUrl: raw.originUrl ?? '',
     evidenceUris: raw.evidenceUris ?? (raw.evidenceUri ? [raw.evidenceUri] : []),
     message: raw.message ?? '',
+    email: raw.email ?? '',
     payoutWallet: raw.payoutWallet ?? '',
     balanceAtSubmit: raw.balanceAtSubmit ?? '0',
     status: raw.status === 'approved' ? 'approved' : 'pending',
