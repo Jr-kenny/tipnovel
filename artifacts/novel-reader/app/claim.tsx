@@ -189,13 +189,31 @@ export default function ClaimScreen() {
               <Text style={[styles.note, { color: colors.mutedForeground }]}>Author totals are unavailable right now.</Text>
             ) : null}
             {stats ? (
-              <View style={styles.stats}>
-                <Text style={[styles.statsLine, { color: colors.foreground }]}>
-                  {formatUnits(stats.balance, USDC_DECIMALS)} USDC · {stats.tippers.toString()} tipped this author
-                </Text>
-                <Text style={[styles.note, { color: colors.mutedForeground }]}>
-                  {stats.verified ? 'Verified author.' : 'Not claimed yet. Tips are held safely until the author is verified.'}
-                </Text>
+              <View>
+                <View style={[styles.statPanel, { borderColor: colors.border }]}>
+                  <View style={styles.statCell}>
+                    <Text style={[styles.statEyebrow, { color: colors.mutedForeground }]}>UNCLAIMED</Text>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>
+                      {formatUnits(stats.balance, USDC_DECIMALS)}
+                      <Text style={[styles.statUnit, { color: colors.mutedForeground }]}> USDC</Text>
+                    </Text>
+                  </View>
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.statCell}>
+                    <Text style={[styles.statEyebrow, { color: colors.mutedForeground }]}>TIPPERS</Text>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>{stats.tippers.toString()}</Text>
+                  </View>
+                </View>
+                <View style={styles.statusRow}>
+                  <Feather
+                    name={stats.verified ? 'check-circle' : 'clock'}
+                    size={14}
+                    color={colors.primary}
+                  />
+                  <Text style={[styles.statusText, { color: colors.mutedForeground }]}>
+                    {stats.verified ? 'Verified author.' : 'Not claimed yet. Tips are held safely until the author is verified.'}
+                  </Text>
+                </View>
               </View>
             ) : null}
           </View>
@@ -254,9 +272,15 @@ export default function ClaimScreen() {
           {stats && stats.verified && stats.wallet && connected?.address.toLowerCase() === stats.wallet.toLowerCase() ? (
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.cardTitle, { color: colors.foreground }]}>Withdraw</Text>
-              <Text style={[styles.note, { color: colors.mutedForeground }]}>
-                {formatUnits(stats.balance, USDC_DECIMALS)} USDC waiting for this wallet.
-              </Text>
+              <View style={[styles.statPanel, { borderColor: colors.border }]}>
+                <View style={styles.statCell}>
+                  <Text style={[styles.statEyebrow, { color: colors.mutedForeground }]}>WAITING</Text>
+                  <Text style={[styles.statValue, { color: colors.foreground }]}>
+                    {formatUnits(stats.balance, USDC_DECIMALS)}
+                    <Text style={[styles.statUnit, { color: colors.mutedForeground }]}> USDC</Text>
+                  </Text>
+                </View>
+              </View>
               {withdrawTx ? (
                 <Pressable
                   accessibilityRole="link"
@@ -290,8 +314,12 @@ export default function ClaimScreen() {
                 <View key={claim.id} style={[styles.claim, { borderColor: colors.border }]}>
                   <View style={styles.claimCopy}>
                     <Text style={[styles.claimTitle, { color: colors.foreground }]}>{claim.authorName}</Text>
-                    <Text style={[styles.note, { color: colors.mutedForeground }]}>
-                      {claim.balanceAtSubmit} USDC · {claim.status === 'approved' ? 'Approved' : 'Under review'}
+                    <Text style={[styles.claimAmount, { color: colors.foreground }]}>
+                      {claim.balanceAtSubmit}
+                      <Text style={[styles.statUnit, { color: colors.mutedForeground }]}> USDC</Text>
+                    </Text>
+                    <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>
+                      {claim.status === 'approved' ? 'Approved' : 'Under review'}
                     </Text>
                   </View>
                   {claim.status === 'pending' ? (
@@ -331,11 +359,18 @@ const styles = StyleSheet.create({
   actionText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   note: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, marginTop: 8 },
   error: { fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 17, marginTop: 10 },
-  stats: { marginTop: 12 },
-  statsLine: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 19 },
+  statPanel: { flexDirection: 'row', borderWidth: 1, borderRadius: 14, marginTop: 14 },
+  statCell: { flex: 1, paddingVertical: 13, paddingHorizontal: 14 },
+  statDivider: { width: StyleSheet.hairlineWidth, marginVertical: 12 },
+  statEyebrow: { fontFamily: 'Inter_600SemiBold', fontSize: 9, letterSpacing: 1.2 },
+  statValue: { fontFamily: 'Georgia', fontSize: 24, lineHeight: 29, marginTop: 5 },
+  statUnit: { fontFamily: 'Inter_400Regular', fontSize: 12 },
+  statusRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 12 },
+  statusText: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, flex: 1 },
   claim: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
   claimCopy: { flex: 1 },
   claimTitle: { fontFamily: 'Inter_500Medium', fontSize: 13 },
+  claimAmount: { fontFamily: 'Georgia', fontSize: 18, lineHeight: 23, marginTop: 3 },
   reviewButton: { minHeight: 34, borderWidth: 1, borderRadius: 17, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   reviewText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
 });
