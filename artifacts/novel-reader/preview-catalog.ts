@@ -8,6 +8,9 @@
  * Run from this directory:  pnpm exec tsx preview-catalog.ts  (port 3101)
  */
 import http from 'node:http';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import catalogHandler from '../../api/catalog.ts';
 import claimsSubmitHandler from '../../api/claims-submit.ts';
 import claimsFollowupHandler from '../../api/claims-followup.ts';
@@ -15,7 +18,6 @@ import adminHandler from '../../api/admin.ts';
 import adminBlobHandler from '../../api/admin-blob.ts';
 import adminClaimsHandler from '../../api/admin-claims.ts';
 import adminReviewHandler from '../../api/admin-review.ts';
-import { getAdminKey } from '../../api/_lib/admin-key.ts';
 
 type Query = Record<string, string | string[]>;
 type Handler = (request: Record<string, unknown>, response: Record<string, unknown>) => Promise<unknown>;
@@ -112,8 +114,34 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+function dataDir(): string {
+  return process.env.CLAIMS_DATA_DIR?.trim() || path.resolve(process.cwd(), '..', '..', 'data-claims');
+}
+
+function ensureAdminKey(): string {
+  if (process.env.ADMIN_KEY?.trim()) return process.env.ADMIN_KEY.trim();
+  const file = path.join(dataDir(), '.admin-key');
+  try {
+    if (existsSync(file)) {
+      const saved = readFileSync(file, 'utf8').trim();
+      if (saved) {
+        process.env.ADMIN_KEY = saved;
+        return saved;
+      }
+    }
+    const fresh = randomBytes(24).toString('hex');
+    mkdirSync(dataDir(), { recursive: true });
+    writeFileSync(file, fresh);
+    process.env.ADMIN_KEY = fresh;
+    return fresh;
+  } catch {
+    const fallback = randomBytes(24).toString('hex');
+    process.env.ADMIN_KEY = fallback;
+    return fallback;
+  }
+}
+
 server.listen(3101, '0.0.0.0', () => {
   console.log('TipNovel preview API on port 3101');
-  const key = getAdminKey();
-  if (key) console.log(`Review page key: ${key}`);
+  console.log(`Review page key: ${ensureAdminKey()}`);
 });
