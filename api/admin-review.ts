@@ -1,5 +1,5 @@
-import { getClaim, requestDetails, setClaimStatus } from '../_lib/claims-store';
-import { checkAdminKey } from '../_lib/admin-key';
+import { getClaim, requestDetails, setClaimStatus } from './_lib/claims-store';
+import { checkAdminKey } from './_lib/admin-key';
 
 type HandlerRequest = {
   method?: string;
