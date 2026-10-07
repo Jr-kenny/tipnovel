@@ -1,4 +1,4 @@
-import { addFollowup, getClaimByToken } from './_lib/claims-store';
+import { addFollowup, getClaimByToken } from '../_lib/claims-store';
 
 type QueryValue = string | string[] | undefined;
 

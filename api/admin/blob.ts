@@ -1,5 +1,5 @@
-import { readEvidenceBytes } from './_lib/claims-store';
-import { checkAdminKey } from './_lib/admin-key';
+import { readEvidenceBytes } from '../_lib/claims-store';
+import { checkAdminKey } from '../_lib/admin-key';
 
 type QueryValue = string | string[] | undefined;
 

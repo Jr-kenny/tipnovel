@@ -1,4 +1,4 @@
-import { createClaim } from './_lib/claims-store';
+import { createClaim } from '../_lib/claims-store';
 
 type HandlerRequest = {
   method?: string;
