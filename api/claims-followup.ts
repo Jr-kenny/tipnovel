@@ -25,7 +25,7 @@ function queryValue(request: HandlerRequest, key: string) {
 
 export default async function handler(request: HandlerRequest, response: HandlerResponse) {
   if (request.method === 'GET') {
-    const found = getClaimByToken(queryValue(request, 'token'));
+    const found = await getClaimByToken(queryValue(request, 'token'));
     if (!found) return sendError(response, 404, 'This follow-up link is invalid.');
     return response.status(200).json({
       claimId: found.claim.id,
@@ -41,7 +41,7 @@ export default async function handler(request: HandlerRequest, response: Handler
     const token = typeof body.token === 'string' ? body.token : '';
     const message = typeof body.message === 'string' ? body.message : '';
     try {
-      addFollowup(token, message, body.evidence);
+      await addFollowup(token, message, body.evidence);
       return response.status(200).json({ ok: true });
     } catch (error) {
       return sendError(response, 400, error instanceof Error ? error.message : 'The reply could not be sent.');

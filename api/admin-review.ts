@@ -29,17 +29,17 @@ export default async function handler(request: HandlerRequest, response: Handler
   try {
     if (action === 'approve') {
       const tx = typeof body.approveTx === 'string' ? body.approveTx.trim() : '';
-      const claim = setClaimStatus(id, 'approved', tx || null);
+      const claim = await setClaimStatus(id, 'approved', tx || null);
       return response.status(200).json({ ok: true, status: claim.status });
     }
     if (action === 'reject') {
-      const claim = setClaimStatus(id, 'rejected', null);
+      const claim = await setClaimStatus(id, 'rejected', null);
       return response.status(200).json({ ok: true, status: claim.status });
     }
     if (action === 'more-info') {
-      const claim = getClaim(id);
+      const claim = await getClaim(id);
       if (!claim) return sendError(response, 404, 'Claim not found.');
-      const { token } = requestDetails(id, body.questions);
+      const { token } = await requestDetails(id, body.questions);
       return response.status(200).json({ ok: true, status: 'more-info', token });
     }
     return sendError(response, 400, 'Unknown action.');

@@ -22,7 +22,7 @@ export default async function handler(request: HandlerRequest, response: Handler
   }
   const body = (request.body ?? {}) as Record<string, unknown>;
   try {
-    const claim = createClaim(body);
+    const claim = await createClaim(body);
     return response.status(200).json({ id: claim.id });
   } catch (error) {
     return sendError(response, 400, error instanceof Error ? error.message : 'The claim could not be sent.');

@@ -26,5 +26,5 @@ export default async function handler(request: HandlerRequest, response: Handler
     response.status(404).json({ error: 'Not found.' });
     return;
   }
-  response.status(200).json({ claims: listClaims() });
+  response.status(200).json({ claims: await listClaims() });
 }
