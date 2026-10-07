@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatUnits, isAddress, type Address } from 'viem';
 import { SubscreenHeader } from '@/components/SubscreenHeader';
 import { useColors } from '@/hooks/useColors';
+import { isValidEmail } from '@/utils/email';
 import {
   OWNER_ADDRESS,
   USDC_DECIMALS,
@@ -51,6 +52,7 @@ export default function ClaimScreen() {
   const [originUrl, setOriginUrl] = useState('');
   const [evidenceUris, setEvidenceUris] = useState<string[]>([]);
   const [message, setMessage] = useState('');
+  const [email, setEmail] = useState('');
   const [payoutWallet, setPayoutWallet] = useState('');
   const [submitBusy, setSubmitBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -105,6 +107,10 @@ export default function ClaimScreen() {
       setSubmitError('Attach at least one dashboard screenshot showing the title, date, and username.');
       return;
     }
+    if (!isValidEmail(email)) {
+      setSubmitError('Add an email where the review outcome can reach you.');
+      return;
+    }
     if (!isAddress(payoutWallet.trim())) {
       setSubmitError('That payout wallet address does not look right.');
       return;
@@ -120,6 +126,7 @@ export default function ClaimScreen() {
         originUrl: originUrl.trim(),
         evidenceUris,
         message: message.trim(),
+        email: email.trim(),
         payoutWallet: payoutWallet.trim(),
         balanceAtSubmit: formatUnits(stats.balance, USDC_DECIMALS),
       });
@@ -129,6 +136,7 @@ export default function ClaimScreen() {
       setOriginUrl('');
       setEvidenceUris([]);
       setMessage('');
+      setEmail('');
       setPayoutWallet('');
       setSubmitted(true);
     } catch {
@@ -182,6 +190,18 @@ export default function ClaimScreen() {
     } finally {
       setReviewBusyId(null);
     }
+  };
+
+  const notifyAuthor = (claim: ClaimRequest) => {
+    if (!claim.email) return;
+    const subject = `Your TipNovel claim passed review`;
+    const body = [
+      `Good news — your claim for ${claim.authorName} passed review.`,
+      '',
+      `${claim.balanceAtSubmit} USDC is waiting for ${claim.payoutWallet}.`,
+      'Open TipNovel → Claim author tips, connect that wallet, and withdraw.',
+    ].join('\n');
+    void Linking.openURL(`mailto:${claim.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
   const handleWithdraw = async () => {
@@ -371,6 +391,21 @@ export default function ClaimScreen() {
                 value={message}
               />
               <TextInput
+                accessibilityLabel="Email for the review outcome"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                onChangeText={(value) => {
+                  setEmail(value);
+                  setSubmitError(null);
+                  setSubmitted(false);
+                }}
+                placeholder="Email for the review outcome"
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+                value={email}
+              />
+              <TextInput
                 accessibilityLabel="Payout wallet"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -457,6 +492,9 @@ export default function ClaimScreen() {
                       {claim.originPlatform} · {claim.originUsername}
                       {claim.evidenceUris.length > 1 ? ` · ${claim.evidenceUris.length} screenshots` : ''}
                     </Text>
+                    {claim.email ? (
+                      <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]}>{claim.email}</Text>
+                    ) : null}
                     {claim.message ? (
                       <Text style={[styles.note, { color: colors.mutedForeground, marginTop: 2 }]} numberOfLines={2}>
                         “{claim.message}”
@@ -478,6 +516,15 @@ export default function ClaimScreen() {
                       ) : (
                         <Text style={[styles.reviewText, { color: colors.foreground }]}>Review</Text>
                       )}
+                    </Pressable>
+                  ) : claim.email ? (
+                    <Pressable
+                      accessibilityLabel={`Email ${claim.authorName} about the approval`}
+                      accessibilityRole="button"
+                      onPress={() => notifyAuthor(claim)}
+                      style={[styles.reviewButton, { borderColor: colors.border }]}
+                    >
+                      <Text style={[styles.reviewText, { color: colors.foreground }]}>Email author</Text>
                     </Pressable>
                   ) : (
                     <Feather name="check-circle" size={18} color={colors.primary} />
