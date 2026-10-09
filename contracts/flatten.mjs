@@ -21,11 +21,13 @@ function inlineFile(file) {
   const base = file.slice(0, file.lastIndexOf('/') + 1);
   const out = [];
   for (const line of content.split('\n')) {
-    const match = line.match(/^import\s+["']([^"']+)["'];/);
-    if (match) {
-      const dep = match[1].startsWith('@')
-        ? require.resolve(match[1], { paths: [dir] })
-        : path.resolve(base, match[1]);
+    const direct = line.match(/^import\s+["']([^"']+)["'];/);
+    const named = line.match(/^import\s+.*\sfrom\s+["']([^"']+)["'];/);
+    const imported = direct ? direct[1] : named ? named[1] : null;
+    if (imported) {
+      const dep = imported.startsWith('@')
+        ? require.resolve(imported, { paths: [dir] })
+        : path.resolve(base, imported);
       if (!seen.has(dep)) {
         seen.add(dep);
         out.push(inlineFile(dep));
