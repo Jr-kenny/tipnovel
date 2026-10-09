@@ -6,7 +6,8 @@
   "description": "TipNovel TipVault contract: compile and deploy tooling (Arc mainnet).",
   "scripts": {
     "compile": "node compile.mjs",
-    "deploy": "node deploy.mjs"
+    "deploy": "node deploy.mjs",
+    "verify": "node verify-sourcify.mjs"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "^5.4.0",
