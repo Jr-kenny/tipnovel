@@ -26,20 +26,18 @@ function findImports(importPath) {
   }
 }
 
-const output = JSON.parse(
-  solc.compile(
-    JSON.stringify({
-      language: 'Solidity',
-      sources: { 'TipVault.sol': { content: source } },
-      settings: {
-        optimizer: { enabled: true, runs: 200 },
-        outputSelection: { '*': { '*': ['abi', 'evm.bytecode.object'] } },
-      },
-    }),
-    { import: findImports },
-  ),
-);
+const stdJsonInput = {
+  language: 'Solidity',
+  sources: { 'TipVault.sol': { content: source } },
+  settings: {
+    optimizer: { enabled: true, runs: 200 },
+    outputSelection: { '*': { '*': ['abi', 'evm.bytecode.object'] } },
+  },
+};
 
+const output = JSON.parse(
+  solc.compile(JSON.stringify(stdJsonInput), { import: findImports }),
+);
 const errors = (output.errors ?? []).filter((entry) => entry.severity === 'error');
 if (errors.length > 0) {
   for (const entry of errors) console.error(entry.formattedMessage ?? entry.message);
@@ -56,5 +54,36 @@ mkdirSync(path.join(dir, 'out'), { recursive: true });
 writeFileSync(
   path.join(dir, 'out', 'TipVault.json'),
   JSON.stringify({ abi: contract.abi, bytecode: `0x${contract.evm.bytecode.object}` }, null, 2),
+);
+
+// Full standard JSON with every source embedded, for manual explorer verification.
+const embedded = new Map([['TipVault.sol', source]]);
+function recordImports(importPath) {
+  try {
+    const resolved = importPath.startsWith('@')
+      ? require.resolve(importPath, { paths: [dir] })
+      : path.resolve(dir, importPath);
+    const contents = readFileSync(resolved, 'utf8');
+    embedded.set(importPath, contents);
+    return { contents };
+  } catch (error) {
+    return { error: `Import not found: ${importPath}` };
+  }
+}
+solc.compile(
+  JSON.stringify({
+    language: 'Solidity',
+    sources: { 'TipVault.sol': { content: source } },
+    settings: { outputSelection: { '*': { '*': [] } } },
+  }),
+  { import: recordImports },
+);
+writeFileSync(
+  path.join(dir, 'out', 'standard-json.json'),
+  JSON.stringify({
+    language: 'Solidity',
+    sources: Object.fromEntries([...embedded.entries()].map(([name, content]) => [name, { content }])),
+    settings: { optimizer: { enabled: true, runs: 200 } },
+  }),
 );
 console.log('Compiled TipNovelVault.');
