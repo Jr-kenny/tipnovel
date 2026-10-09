@@ -48,7 +48,8 @@ function inlineFile(file) {
 }
 
 seen.add(path.join(dir, 'TipVault.sol'));
-const flat = `${spdx.join('\n')}\n${pragma}\n${inlineFile(path.join(dir, 'TipVault.sol'))}\n`;
+const body = inlineFile(path.join(dir, 'TipVault.sol'));
+const flat = `${spdx.join('\n')}\n${pragma}\n${body}\n`;
 mkdirSync(path.join(dir, 'out'), { recursive: true });
 writeFileSync(path.join(dir, 'out', 'TipVaultFlat.sol'), flat);
 console.log('Flattened TipVaultFlat.sol.');
