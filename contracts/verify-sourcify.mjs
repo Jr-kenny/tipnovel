@@ -77,7 +77,7 @@ const stdJsonInput = {
   settings: { optimizer: { enabled: true, runs: 200 } },
 };
 
-const compilerVersion = solc.version();
+const compilerVersion = solc.version().replace('.Emscripten.clang', '');
 console.log(`Submitting ${address} on chain ${chainId} with ${compilerVersion} ...`);
 
 const submit = await fetch(`https://sourcify.dev/server/v2/verify/${chainId}/${address}`, {
