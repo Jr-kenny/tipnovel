@@ -29,12 +29,20 @@ if (!address || !creationTransactionHash) {
   process.exit(1);
 }
 
+async function fetchMatch() {
+  const response = await fetch(`https://sourcify.dev/server/v2/contract/${chainId}/${address}`);
+  if (!response.ok) return null;
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 async function alreadyVerified() {
-  const response = await fetch(`https://sourcify.dev/server/v2/contract/${chainId}/${address}?fields=status`);
-  if (!response.ok) return false;
-  const payload = await response.json();
-  const status = payload?.status ?? payload?.[0]?.status;
-  return status === 'perfect' || status === 'partial';
+  const payload = await fetchMatch();
+  const status = payload?.match ?? payload?.status;
+  return status === 'match' || status === 'perfect' || status === 'partial';
 }
 
 if (await alreadyVerified()) {
@@ -103,6 +111,10 @@ for (let attempt = 0; attempt < 30; attempt++) {
   const job = status?.job ?? status;
   if (job?.status === 'verifying') continue;
   console.log(JSON.stringify(status).slice(0, 800));
+  if (await alreadyVerified()) {
+    console.log(`Verified on Sourcify (${network}).`);
+    process.exit(0);
+  }
   if (job?.status === 'finished' || status?.status === 'perfect' || status?.status === 'partial') {
     console.log(`Verified on Sourcify (${network}).`);
     process.exit(0);
